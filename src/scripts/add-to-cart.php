@@ -1,23 +1,19 @@
 <?php
 session_start();
-include('src/scripts/db-connect.php');
 
-if (!isset($_POST['book_id']) || !is_numeric($_POST['book_id'])) {
-    die("Invalid book ID.");
-}
+$bookId = $_POST['book_id'];
+$quantity = isset($_POST['quantity']) ? max(1, (int)$_POST['quantity']) : 1;
 
-$bookId = intval($_POST['book_id']);
-
-// Initialize the cart if it doesn't exist yet
 if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
 }
 
-// Add the book to the session cart (avoid duplicates)
-if (!in_array($bookId, $_SESSION['cart'])) {
-    $_SESSION['cart'][] = $bookId;
+if (isset($_SESSION['cart'][$bookId])) {
+    $_SESSION['cart'][$bookId] += $quantity;
+} else {
+    $_SESSION['cart'][$bookId] = $quantity;
 }
 
-// Redirect back to the previous page
+// Перенаправление обратно на страницу книги или на страницу каталога
 header('Location: ' . $_SERVER['HTTP_REFERER']);
 exit;
