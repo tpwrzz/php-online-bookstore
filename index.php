@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8" />
@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
-<body>
+<body class="flex flex-col min-h-screen bg-[#f8fafc]">
     <nav class="relative bg-gray-800 dark:bg-blue-200">
         <div class="mx-20 max-w-full sm:px-6 lg:px-8">
             <div class="relative flex h-20 items-center justify-center-safe">
@@ -45,13 +45,9 @@
                                 Bookstore</a>
                             <a href="#"
                                 class="rounded-md px-3 py-2 text-lg font-medium text-[#618792] hover:bg-white/40">Books
-                                In English</a>
-                            <a href="#"
-                                class="rounded-md px-3 py-2 text-lg font-medium text-[#618792] hover:bg-white/40">Books
                                 under $5</a>
                             <a href="#"
-                                class="rounded-md px-3 py-2 text-lg font-medium text-[#618792] hover:bg-white/40">Rated
-                                10</a>
+                                class="rounded-md px-3 py-2 text-lg font-medium text-[#618792] hover:bg-white/40">Redaction Selected</a>
                         </div>
                     </div>
                 </div>
@@ -92,72 +88,73 @@
                 Bookstore</a>
             <a href="#"
                 class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-white/5 hover:text-[#1b1b1e]">Books
-                In English</a>
+                under €5</a>
             <a href="#"
-                class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-white/5 hover:text-[#1b1b1e]">Books
-                under $5</a>
-            <a href="#"
-                class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-white/5 hover:text-[#1b1b1e]">Rated
-                10</a>
+                class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-white/5 hover:text-[#1b1b1e]">Redaction Selected
+                </a>
         </div>
     </nav>
 
-    <div class="flex flex-col md:flex-row gap-4 bg-[#f8fafc] max-w-full">
+    <div class="flex flex-col md:flex-row gap-4 bg-[#f8fafc] max-w-full ">
         <!-- Sidebar -->
         <aside class="ml-10 mb-5 mt-5 mr-5 max-w-full md:w-64 sticky">
             <h2 class="text-xl font-semibold mb-4">Filters</h2>
+            <form method="GET" action="" class="space-y-4">
+                <!-- Genre Filter -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-[#1b1b1e] mb-2">Genre</label>
+                    <select name="genre"
+                        class="w-full border border-gray-300 rounded-md p-2 text-[#1b1b1e] focus:outline-none focus:ring-2 focus:ring-[#8AB2C1]">
+                        <option value="">All</option>
+                        <?php
+                        include('src/scripts/db-connect.php');
+                        $genreQuery = "SELECT genre_id, name FROM genres ORDER BY name ASC";
+                        $result = $conn->query($genreQuery);
 
-            <!-- Genre Filter -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-[#1b1b1e] mb-2">Genre</label>
-                <select
-                    class="w-full border border-gray-300 rounded-md p-2 text-[#1b1b1e] focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    name="genre">
-                    <option value="">All</option>
-                    <?php
-                    include('src/scripts/db-connect.php');
-
-                    $genreQuery = "SELECT genre_id, name FROM genres ORDER BY name ASC";
-                    $result = $conn->query($genreQuery);
-
-                    if ($result && $result->num_rows > 0) {
-                        while ($row = $result->fetch_assoc()) {
-                            echo '<option value="' . $row['genre_id'] . '">' . htmlspecialchars($row['name']) . '</option>';
+                        if ($result && $result->num_rows > 0) {
+                            while ($row = $result->fetch_assoc()) {
+                                $selected = (isset($_GET['genre']) && $_GET['genre'] == $row['genre_id']) ? 'selected' : '';
+                                echo '<option value="' . $row['genre_id'] . '" ' . $selected . '>' . htmlspecialchars($row['name']) . '</option>';
+                            }
                         }
-                    }
-                    ?>
-                </select>
-            </div>
-
-            <!-- Price Filter -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-[#1b1b1e] mb-2">Price range</label>
-                <div class="flex items-center space-x-2">
-                    <input type="number" placeholder="Min" min="0"
-                        class="w-1/2 border border-gray-300 rounded-md p-2 text-[#1b1b1e] focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <input type="number" placeholder="Max" min="0"
-                        class="w-1/2 border border-gray-300 rounded-md p-2 text-[#1b1b1e] focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        ?>
+                    </select>
                 </div>
-            </div>
 
-            <hr class="my-4">
+                <!-- Price Filter -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-[#1b1b1e] mb-2">Price range</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="number" name="min_price" placeholder="Min" min="0"
+                            value="<?= isset($_GET['min_price']) ? htmlspecialchars($_GET['min_price']) : '' ?>"
+                            class="w-1/2 border border-gray-300 rounded-md p-2 text-[#1b1b1e] focus:outline-none focus:ring-2 focus:ring-[#8AB2C1]">
+                        <input type="number" name="max_price" placeholder="Max" min="0"
+                            value="<?= isset($_GET['max_price']) ? htmlspecialchars($_GET['max_price']) : '' ?>"
+                            class="w-1/2 border border-gray-300 rounded-md p-2 text-[#1b1b1e] focus:outline-none focus:ring-2 focus:ring-[#8AB2C1]">
+                    </div>
+                </div>
 
-            <h2 class="text-xl font-semibold mb-4">Sort By</h2>
+                <hr class="my-4">
 
-            <!-- Sort Options -->
-            <div class="mb-4">
-                <select id="sort"
-                    class="w-full border border-gray-300 rounded-md p-2 text-[#1b1b1e] focus:outline-none focus:ring-2 focus:ring-[#8AB2C1]">
-                    <option>Default</option>
-                    <option>Price: Low to High</option>
-                    <option>Price: High to Low</option>
-                    <option>Newest</option>
-                </select>
-            </div>
+                <h2 class="text-xl font-semibold mb-4">Sort By</h2>
 
-            <button class="w-full bg-[#618792]/80 text-white py-2 rounded-md font-medium hover:bg-[#618792] transition">
-                Apply
-            </button>
+                <!-- Sort Options -->
+                <div class="mb-4">
+                    <select name="sort" id="sort"
+                        class="w-full border border-gray-300 rounded-md p-2 text-[#1b1b1e] focus:outline-none focus:ring-2 focus:ring-[#8AB2C1]">
+                        <option value="">Default</option>
+                        <option value="price_asc" <?= isset($_GET['sort']) && $_GET['sort'] == 'price_asc' ? 'selected' : '' ?>>Price: Low to High</option>
+                        <option value="price_desc" <?= isset($_GET['sort']) && $_GET['sort'] == 'price_desc' ? 'selected' : '' ?>>Price: High to Low</option>
+                        <option value="newest" <?= isset($_GET['sort']) && $_GET['sort'] == 'newest' ? 'selected' : '' ?>>
+                            Newest</option>
+                    </select>
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-[#618792]/80 text-white py-2 rounded-md font-medium hover:bg-[#618792] transition">
+                    Apply
+                </button>
+            </form>
         </aside>
 
         <?php
@@ -165,67 +162,102 @@
 
         // Cards per page
         $cardsPerPage = 12;
+        $currentPage = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+        $offset = ($currentPage - 1) * $cardsPerPage;
 
-        // Get current page from URL, default 1
-        $currentPage = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-        if ($currentPage < 1)
-            $currentPage = 1;
+        // Filters
+        $whereClauses = [];
+        if (!empty($_GET['genre'])) {
+            $genre_id = (int) $_GET['genre'];
+            $whereClauses[] = "books.genre_id = $genre_id";
+        }
+        if (!empty($_GET['min_price'])) {
+            $min_price = (float) $_GET['min_price'];
+            $whereClauses[] = "books.price >= $min_price";
+        }
+        if (!empty($_GET['max_price'])) {
+            $max_price = (float) $_GET['max_price'];
+            $whereClauses[] = "books.price <= $max_price";
+        }
 
-        // Count total books for pagination
-        $countSql = "SELECT COUNT(*) as total FROM books";
+        $whereSQL = '';
+        if (!empty($whereClauses)) {
+            $whereSQL = 'WHERE ' . implode(' AND ', $whereClauses);
+        }
+
+        // Sorting
+        $orderSQL = '';
+        if (!empty($_GET['sort'])) {
+            switch ($_GET['sort']) {
+                case 'price_asc':
+                    $orderSQL = 'ORDER BY books.price ASC';
+                    break;
+                case 'price_desc':
+                    $orderSQL = 'ORDER BY books.price DESC';
+                    break;
+                case 'newest':
+                    $orderSQL = 'ORDER BY books.published_at DESC';
+                    break;
+            }
+        }
+
+        // Count total
+        $countSql = "SELECT COUNT(*) as total FROM books $whereSQL";
         $countResult = $conn->query($countSql);
         $totalCards = $countResult->fetch_assoc()['total'];
         $totalPages = ceil($totalCards / $cardsPerPage);
 
-        // Calculate OFFSET
-        $offset = ($currentPage - 1) * $cardsPerPage;
-
-        // Fetch only the current page books
+        // Query books
         $sql = "
-SELECT 
-    books.book_id,
-    books.title,
-    books.price,
-    books.cover_img,
-    CONCAT(authors.first_name, ' ', authors.last_name) AS author_name,
-    genres.name AS genre_name
-FROM books
-JOIN authors ON books.author_id = authors.author_id
-JOIN genres ON books.genre_id = genres.genre_id
-LIMIT $cardsPerPage OFFSET $offset
-";
+            SELECT books.book_id, books.title, books.price, books.cover_img,
+                   CONCAT(authors.first_name, ' ', authors.last_name) AS author_name,
+                   genres.name AS genre_name
+            FROM books
+            JOIN authors ON books.author_id = authors.author_id
+            JOIN genres ON books.genre_id = genres.genre_id
+            $whereSQL
+            $orderSQL
+            LIMIT $cardsPerPage OFFSET $offset
+        ";
 
         $result = $conn->query($sql);
         ?>
         <main class="flex-1 m-5">
             <div class="grid gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 max-w-full mx-5">
-                <?php while ($row = $result->fetch_assoc()) { ?>
-                    <div class="w-80 rounded-lg shadow-sm overflow-hidden flex flex-col">
-                        <a href="#">
-                            <!-- Keep aspect ratio, fit into max height if too big -->
-                            <img class="w-full max-h-80 object-contain" src="src/img/covers/<?= $row['cover_img'] ?>"
-                                alt="<?= htmlspecialchars($row['title']) ?>" />
-                        </a>
-                        <div class="px-4 pb-4 mt-2 flex flex-col flex-grow">
-                            <a href="#">
-                                <h5 class="text-lg font-semibold tracking-tight text-[#618792] dark:text-[#1b1b1e]">
-                                    <?= htmlspecialchars($row['title']) ?>
-                                </h5>
-                            </a>
-                            <p class="text-sm text-gray-500 mt-1"><?= htmlspecialchars($row['author_name']) ?> |
-                                <?= htmlspecialchars($row['genre_name']) ?>
-                            </p>
-                            <div class="flex items-center justify-between mt-3">
-                                <span
-                                    class="text-xl font-bold text-[#618792] dark:text-[#1b1b1e]">$<?= $row['price'] ?></span>
-                                <a href="#"
-                                    class="text-[#f8fafc] bg-[#001021]/50 hover:bg-[#001021]/80 focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-3 py-2 text-center dark:bg-[#001021]/50 dark:hover:bg-[#001021]/80">
-                                    Add
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                <?php } ?>
+                <?php while ($row = $result->fetch_assoc()) {
+                    echo '
+            <div class="bg-white rounded-2xl shadow hover:shadow-md transition transform hover:-translate-y-1 flex flex-col justify-between">
+    <a href="public/pages/book.php?id=' . $row['book_id'] . '" class="block">
+        <!-- Book Cover -->
+        <div class="aspect-[3/4] w-full overflow-hidden rounded-t-2xl flex justify-center items-center bg-gray-100">
+            <img src="src/img/covers/' . $row['cover_img'] . '" 
+                 alt="' . htmlspecialchars($row['title']) . '" 
+                 class="object-contain w-[340px] h-[420px]">
+        </div>
+    </a>
+
+    <!-- Book Info + Add Button Side by Side -->
+    <div class="flex justify-between items-center p-4">
+        <div class="flex flex-col w-[70%]">
+            <h3 class="text-lg font-semibold text-[#1b1b1e] truncate">' . htmlspecialchars($row['title']) . '</h3>
+            <p class="text-sm text-gray-600 mb-1 truncate">' . htmlspecialchars($row['author_name']) . '</p>
+            <p class="text-sm text-gray-500 mb-1 truncate">' . htmlspecialchars($row['genre_name']) . '</p>
+            <p class="font-medium text-[#618792]">' . number_format($row['price'], 2) . ' €</p>
+        </div>
+
+        <form action="src/scripts/add-to-cart.php" method="POST" class="ml-3 flex-shrink-0">
+            <input type="hidden" name="book_id" value="' . $row['book_id'] . '">
+            <button type="submit" 
+                    class="bg-[#618792]/90 text-white py-2 px-4 rounded-md font-medium hover:bg-[#618792] transition">
+                Add
+            </button>
+        </form>
+    </div>
+</div>
+            ';
+                }
+
+                ?>
             </div>
 
             <!-- Pagination -->
@@ -252,7 +284,7 @@ LIMIT $cardsPerPage OFFSET $offset
             </nav>
         </main>
     </div>
-    <footer class="z-20 w-full bg-blue-200 ">
+    <footer class="z-20 w-full bg-blue-200 place-self-end  mt-auto">
         <div class="mx-10 px-2 sm:px-6 lg:px-8">
             <div class="relative flex h-16 items-center justify-between">
                 <span
