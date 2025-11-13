@@ -8,6 +8,35 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+$booksInCart = $_SESSION['cart'] ?? [];
+$cartItems = [];
+$totalPrice = 0;
+
+if (!empty($booksInCart)) {
+    $bookIds = array_keys($booksInCart);
+    $placeholders = implode(',', array_fill(0, count($bookIds), '?'));
+    $sql = "SELECT book_id, title, price, cover_img FROM books WHERE book_id IN ($placeholders)";
+    $stmt = $conn->prepare($sql);
+    $types = str_repeat('i', count($bookIds));
+    $stmt->bind_param($types, ...$bookIds);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    while ($row = $result->fetch_assoc()) {
+        $qty = $booksInCart[$row['book_id']];
+        $subtotal = $row['price'] * $qty;
+        $totalPrice += $subtotal;
+        $cartItems[] = [
+            'title' => $row['title'],
+            'price' => $row['price'],
+            'quantity' => $qty,
+            'subtotal' => $subtotal,
+            'cover' => $row['cover_img']
+        ];
+    }
+}
+
+// ORDER PROCESS
 $errors = [];
 $success = false;
 
@@ -18,15 +47,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$full_name || !$address || !$email) {
         $errors[] = "All fields are required";
+    } elseif (empty($cartItems)) {
+        $errors[] = "Your cart is empty";
     } else {
-        // Здесь можно вставить логику создания заказа в таблицу `orders`
-        // Пример (без корзины):
         $stmt = $conn->prepare("INSERT INTO orders (user_id, full_name, address, total_price, status, created_at) VALUES (?, ?, ?, ?, 'Pending', NOW())");
-        $totalPrice = 0; // можно считать сумму из $_SESSION['cart']
         $stmt->bind_param("issd", $_SESSION['user_id'], $full_name, $address, $totalPrice);
         if ($stmt->execute()) {
             $success = true;
-            unset($_SESSION['cart']); // очистка корзины после заказа
+            unset($_SESSION['cart']);
         } else {
             $errors[] = "Failed to create order. Try again.";
         }
@@ -79,12 +107,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <a href="../index.php" aria-current="page"
                                 class="rounded-md bg-[#618792] px-3 py-2 text-lg font-medium text-white dark:bg-gray-950/50 hover:bg-gray-950/70">Online
                                 Bookstore</a>
-                            <a href="#"
-                                class="rounded-md px-3 py-2 text-lg font-medium text-[#618792] hover:bg-white/40">Books
-                                under €5</a>
-                            <a href="#"
-                                class="rounded-md px-3 py-2 text-lg font-medium text-[#618792] hover:bg-white/40">Redaction
-                                Selected</a>
                         </div>
                     </div>
                 </div>
@@ -106,23 +128,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </a>
                     </button>
                     <el-dropdown class="relative ml-3">
-                        <button onclick="window.location.href='<?=
-                            isset($_SESSION['user_id']) ? '../secure/user/myinfo.php' : 'auth.php'
-                            ?>'" class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
+                       <a href='<?= isset($_SESSION['user_id']) ? "../secure/user/myinfo.php" : "public/auth.php" ?>'
+                            class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
                             <span class="sr-only">Open user menu</span>
-                            <img src="../src/img/avatar.png" alt="User Avatar" class="size-10 rounded-full" />
-                        </button>
-                        <el-menu anchor="bottom end" popover
-                            class="w-48 origin-top-right rounded-md bg-white py-1 shadow-lg outline outline-black/5 dark:bg-gray-800 dark:shadow-none dark:-outline-offset-1 dark:outline-white/10">
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-[#1b1b1e] focus:bg-[#618792]/90 dark:text-gray-300 dark:focus:bg-white/5">Your
-                                profile</a>
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-[#1b1b1e] focus:bg-[#618792]/90 dark:text-gray-300 dark:focus:bg-white/5">Settings</a>
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-[#1b1b1e] focus:bg-[#618792]/90 dark:text-gray-300 dark:focus:bg-white/5">Sign
-                                out</a>
-                        </el-menu>
+                            <img src="<?= isset($_SESSION['user_id']) ? '../src/img/avatar.png' : '../src/img/login.png' ?>"
+                                alt="User Avatar" class="size-10 rounded-full" />
+                        </a>
                     </el-dropdown>
                 </div>
             </div>
@@ -157,7 +168,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         Home
                     </a>
                 </li>
-
+                <li aria-current="page">
+                    <a href="cart.php" class="flex items-center">
+                        <svg class="rtl:rotate-180 w-3 h-3 text-[#618792] mx-1" aria-hidden="true"
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="m1 9 4-4-4-4" />
+                        </svg>
+                        <span class="ms-1 text-sm font-medium text-[#618792] md:ms-2">Cart</span>
+                    </a>
+                </li>
                 <li aria-current="page">
                     <div class="flex items-center">
                         <svg class="rtl:rotate-180 w-3 h-3 text-[#618792] mx-1" aria-hidden="true"
@@ -165,14 +185,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="m1 9 4-4-4-4" />
                         </svg>
-                        <span
-                            class="ms-1 text-sm font-medium text-[#618792] md:ms-2">Complete order Information</span>
+                        <span class="ms-1 text-sm font-medium text-[#618792] md:ms-2">Complete order Information</span>
                     </div>
                 </li>
             </ol>
         </nav>
-        <div class="bg-white p-6 rounded shadow-md w-full max-w-md">
-            <h2 class="text-xl font-semibold mb-4">Delivery Information</h2>
+        <div class="bg-white p-6 rounded shadow-md w-full max-w-3xl mx-auto">
+            <h2 class="text-xl font-semibold mb-4">Order Summary</h2>
 
             <?php if ($errors): ?>
                 <div class="bg-red-100 text-red-700 p-2 mb-4 rounded">
@@ -182,34 +201,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <?php if ($success): ?>
-                <div class="bg-green-100 text-green-700 p-2 mb-4 rounded">
-                    Your order has been placed successfully!
+                <div class="bg-green-100 text-green-700 p-3 rounded mb-4">
+                    ✅ Your order has been placed successfully!
                 </div>
+                <a href="../secure/user/myinfo.php" class="block text-center px-4 py-2 border rounded-md mt-3">View
+                    Order</a>
+                <a href="../index.php" class="block text-center px-4 py-2 border rounded-md mt-3">Continue Shopping</a>
             <?php else: ?>
-                <form method="POST" class="space-y-4">
-                    <form id="user-form">
-                        <div>
-                            <h3 class="text-base text-slate-900 font-semibold mb-4">User Details</h3>
-                            <div class="space-y-3">
-                                <div class="relative flex items-center">
-                                    <input type="text" name="full_name" placeholder="Full Name"
-                                        class="px-4 py-2.5 bg-white text-slate-900 rounded-md w-full text-sm border-b border-gray-200 pr-10 focus:border-gray-800 outline-none" />
-                                </div>
-                                <div class="relative flex items-center">
-                                    <input type="text" name="address" placeholder="Address"
-                                        class="px-4 py-2.5 bg-white text-slate-900 rounded-md w-full text-sm border-b border-gray-200 pr-10 focus:border-gray-800 outline-none" />
-                                </div>
-                                <div class="relative flex items-center">
-                                    <input type="email" name="email" placeholder="Email"
-                                        class="px-4 py-2.5 bg-white text-slate-900 rounded-md w-full text-sm border-b border-gray-200 pr-10 focus:border-gray-800 outline-none" />
-                                </div>
-                                <button type="submit"
-                                    class="text-sm px-4 py-2.5 w-full font-medium tracking-wide bg-gray-800 hover:bg-gray-900 text-white rounded-md cursor-pointer mt-4">Save
-                                    Place Order</button>
+
+                <!-- CART REVIEW -->
+                <div class="divide-y divide-gray-200 mb-6">
+                    <?php foreach ($cartItems as $item): ?>
+                        <div class="flex items-center py-3">
+                            <img src="../src/img/covers/<?= htmlspecialchars($item['cover']) ?>" alt=""
+                                class="w-16 h-20 object-cover rounded mr-4">
+                            <div class="flex-1">
+                                <h3 class="text-sm font-medium text-gray-900"><?= htmlspecialchars($item['title']) ?></h3>
+                                <p class="text-sm text-gray-600">Qty: <?= $item['quantity'] ?></p>
+                            </div>
+                            <div class="text-sm font-semibold text-gray-900">
+                                €<?= number_format($item['subtotal'], 2) ?>
                             </div>
                         </div>
+                    <?php endforeach; ?>
+                </div>
 
-                    <?php endif; ?>
+                <div class="flex justify-between text-lg font-semibold border-t pt-3 mb-6">
+                    <span>Total:</span>
+                    <span>€<?= number_format($totalPrice, 2) ?></span>
+                </div>
+
+                <!-- DELIVERY INFO -->
+                <form method="POST" class="space-y-4">
+                    <h3 class="text-base font-semibold">Delivery Information</h3>
+                    <input type="text" name="full_name" placeholder="Full Name"
+                        class="w-full px-4 py-2 border rounded-md text-sm" required>
+                    <input type="text" name="address" placeholder="Address"
+                        class="w-full px-4 py-2 border rounded-md text-sm" required>
+                    <input type="email" name="email" placeholder="Email" class="w-full px-4 py-2 border rounded-md text-sm"
+                        required>
+                    <button type="submit" class="w-full bg-gray-800 hover:bg-gray-900 text-white py-2 rounded-md">
+                        Place Order
+                    </button>
+                </form>
+            <?php endif; ?>
         </div>
     </main>
     <footer class="z-20 w-full bg-blue-200 place-self-end  mt-auto">

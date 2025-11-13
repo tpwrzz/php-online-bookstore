@@ -1,6 +1,6 @@
 <?php
- session_start();
- $isLoggedIn = isset($_SESSION['user_id']);
+session_start();
+$isLoggedIn = isset($_SESSION['user_id']);
 include('../src/scripts/db-connect.php');
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
@@ -99,12 +99,6 @@ if ($similarResult && $similarResult->num_rows > 0) {
                             <a href="../index.php" aria-current="page"
                                 class="rounded-md bg-[#618792] px-3 py-2 text-lg font-medium text-white dark:bg-gray-950/50 hover:bg-gray-950/70">Online
                                 Bookstore</a>
-                            <a href="#"
-                                class="rounded-md px-3 py-2 text-lg font-medium text-[#618792] hover:bg-white/40">Books
-                                under €5</a>
-                            <a href="#"
-                                class="rounded-md px-3 py-2 text-lg font-medium text-[#618792] hover:bg-white/40">Redaction
-                                Selected</a>
                         </div>
                     </div>
                 </div>
@@ -112,7 +106,7 @@ if ($similarResult && $similarResult->num_rows > 0) {
                 <!-- Right Icons -->
                 <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
                     <?php
-                   
+
                     $cartCount = isset($_SESSION['cart']) ? count($_SESSION['cart']) : 0;
                     ?>
                     <a href="cart.php" class="relative">
@@ -126,23 +120,12 @@ if ($similarResult && $similarResult->num_rows > 0) {
                     </a>
                     </button>
                     <el-dropdown class="relative ml-3">
-                        <button onclick="window.location.href='<?=
-                            isset($_SESSION['user_id']) ? '../secure/user/myinfo.php' : 'auth.php'
-                            ?>'" class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
+                        <a href='<?= isset($_SESSION['user_id']) ? "../secure/user/myinfo.php" : "public/auth.php" ?>'
+                            class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
                             <span class="sr-only">Open user menu</span>
-                            <img src="../../src/img/avatar.png" alt="User Avatar" class="size-10 rounded-full" />
-                        </button>
-                        <el-menu anchor="bottom end" popover
-                            class="w-48 origin-top-right rounded-md bg-white py-1 shadow-lg outline outline-black/5 dark:bg-gray-800 dark:shadow-none dark:-outline-offset-1 dark:outline-white/10">
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-[#1b1b1e] focus:bg-[#618792]/90 dark:text-gray-300 dark:focus:bg-white/5">Your
-                                profile</a>
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-[#1b1b1e] focus:bg-[#618792]/90 dark:text-gray-300 dark:focus:bg-white/5">Settings</a>
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-[#1b1b1e] focus:bg-[#618792]/90 dark:text-gray-300 dark:focus:bg-white/5">Sign
-                                out</a>
-                        </el-menu>
+                            <img src="<?= isset($_SESSION['user_id']) ? '../src/img/avatar.png' : '../src/img/login.png' ?>"
+                                alt="User Avatar" class="size-10 rounded-full" />
+                        </a>
                     </el-dropdown>
                 </div>
             </div>
@@ -191,7 +174,7 @@ if ($similarResult && $similarResult->num_rows > 0) {
                 </li>
             </ol>
         </nav>
-
+        <!-- Book -->
         <div class="flex flex-col md:flex-row gap-10 mt-4">
 
             <!-- Cover -->

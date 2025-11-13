@@ -34,10 +34,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $conn->prepare("INSERT INTO users (username, password_hash, email, created_at) VALUES (?, ?, ?, NOW())");
                 $stmt->bind_param("sss", $email, $hash, $email);
                 if ($stmt->execute()) {
-                    $_SESSION['user_id'] = $stmt->insert_id;
-                    $_SESSION['username'] = $email;
-                    header('Location: myinfo.php');
-                    exit;
+                    if ($result['role'] == "USER") {
+                        $_SESSION['user_id'] = $result['user_id'];
+                        $_SESSION['username'] = $username;
+                        header('Location: ../secure/user/myinfo.php');
+                    } else {
+                        $_SESSION['user_id'] = $result['user_id'];
+                        $_SESSION['username'] = $username;
+                        header('Location: ../secure/admin/orders.php');
+                    }
                 } else {
                     $errors[] = "Registration failed. Try again.";
                 }
@@ -47,14 +52,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$username || !$password) {
             $errors[] = "Please enter username and password.";
         } else {
-            $stmt = $conn->prepare("SELECT user_id, password_hash FROM users WHERE username = ?");
+            $stmt = $conn->prepare("SELECT user_id, password_hash, role FROM users WHERE username = ?");
             $stmt->bind_param("s", $username);
             $stmt->execute();
             $result = $stmt->get_result()->fetch_assoc();
             if ($result && password_verify($password, $result['password_hash'])) {
-                $_SESSION['user_id'] = $result['user_id'];
-                $_SESSION['username'] = $username;
-                header('Location: order.php');
+                if ($result['role'] == "USER") {
+                    $_SESSION['user_id'] = $result['user_id'];
+                    $_SESSION['username'] = $username;
+                    header('Location: ../secure/user/myinfo.php');
+                } else {
+                    $_SESSION['user_id'] = $result['user_id'];
+                    $_SESSION['username'] = $username;
+                    header('Location: ../secure/admin/orders.php');
+                }
                 exit;
             } else {
                 $errors[] = "Invalid username or password.";
@@ -108,12 +119,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <a href="../index.php" aria-current="page"
                                 class="rounded-md bg-[#618792] px-3 py-2 text-lg font-medium text-white dark:bg-gray-950/50 hover:bg-gray-950/70">Online
                                 Bookstore</a>
-                            <a href="#"
-                                class="rounded-md px-3 py-2 text-lg font-medium text-[#618792] hover:bg-white/40">Books
-                                under €5</a>
-                            <a href="#"
-                                class="rounded-md px-3 py-2 text-lg font-medium text-[#618792] hover:bg-white/40">Redaction
-                                Selected</a>
                         </div>
                     </div>
                 </div>
@@ -135,23 +140,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </a>
                     </button>
                     <el-dropdown class="relative ml-3">
-                        <button onclick="window.location.href='<?=
-                            isset($_SESSION['user_id']) ? '../secure/user/myinfo.php' : 'auth.php'
-                            ?>'" class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
+                        <a href='<?= isset($_SESSION['user_id']) ? "../secure/user/myinfo.php" : "public/auth.php" ?>'
+                            class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
                             <span class="sr-only">Open user menu</span>
-                            <img src="../src/img/avatar.png" alt="User Avatar" class="size-10 rounded-full" />
-                        </button>
-                        <el-menu anchor="bottom end" popover
-                            class="w-48 origin-top-right rounded-md bg-white py-1 shadow-lg outline outline-black/5 dark:bg-gray-800 dark:shadow-none dark:-outline-offset-1 dark:outline-white/10">
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-[#1b1b1e] focus:bg-[#618792]/90 dark:text-gray-300 dark:focus:bg-white/5">Your
-                                profile</a>
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-[#1b1b1e] focus:bg-[#618792]/90 dark:text-gray-300 dark:focus:bg-white/5">Settings</a>
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-[#1b1b1e] focus:bg-[#618792]/90 dark:text-gray-300 dark:focus:bg-white/5">Sign
-                                out</a>
-                        </el-menu>
+                            <img src="<?= isset($_SESSION['user_id']) ? '../src/img/avatar.png' : '../src/img/login.png' ?>"
+                                alt="User Avatar" class="size-10 rounded-full" />
+                        </a>
                     </el-dropdown>
                 </div>
             </div>
@@ -173,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </nav>
     <main class="flex-1 max-w-6xl mx-auto px-4">
         <!-- Breadcrumb -->
-       <!-- <nav class="flex my-6" aria-label="Breadcrumb">
+        <!-- <nav class="flex my-6" aria-label="Breadcrumb">
             <ol class="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
                 <li class="inline-flex items-center">
                     <a href="../index.php"
@@ -202,11 +196,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!--- login register--->
         <div id="login-form" class="flex flex-col items-center justify-center py-6 px-4">
             <div class="max-w-[480px] w-full">
-                <a href="#"><img src="../src/img/books.png" alt="logo"
-                        class="w-20 mb-8 mx-auto block" /></a>
+                <a href="#"><img src="../src/img/books.png" alt="logo" class="w-20 mb-8 mx-auto block" /></a>
 
                 <div class="p-6 sm:p-8 rounded-2xl bg-white border border-gray-200 shadow-sm">
-                    <h1 class="text-slate-900 text-center text-3xl font-semibold">Sign in</h1>
+                    <h1 class="text-gray-900 text-center text-3xl font-semibold">Sign in</h1>
 
                     <?php if ($errors): ?>
                     <div class="bg-red-100 text-red-700 p-2 mb-4 rounded">
@@ -218,27 +211,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <form method="POST" class="mt-12 space-y-6">
                         <input type="hidden" name="action" value="login">
                         <div>
-                            <label class="text-slate-900 text-sm font-medium mb-2 block">User name</label>
+                            <label class="text-[#618792] text-sm font-medium mb-2 block">User name</label>
                             <input name="username" type="text" required
-                                class="w-full text-slate-900 text-sm border border-slate-300 px-4 py-3 rounded-md outline-blue-600"
+                                class="w-full text-gray-900 text-sm border border-[#618792]/90 px-4 py-3 rounded-md outline-[#618792]/60"
                                 placeholder="Enter username" />
                         </div>
                         <div>
-                            <label class="text-slate-900 text-sm font-medium mb-2 block">Password</label>
+                            <label class="text-[#618792] text-sm font-medium mb-2 block">Password</label>
                             <input name="password" type="password" required
-                                class="w-full text-slate-900 text-sm border border-slate-300 px-4 py-3 rounded-md outline-blue-600"
+                                class="w-full text-gray-900 text-sm border border-[#618792]/90 px-4 py-3 rounded-md outline-[#618792]/60"
                                 placeholder="Enter password" />
                         </div>
                         <button type="submit"
-                            class="w-full py-2 px-4 text-[15px] font-medium tracking-wide rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none cursor-pointer">
+                            class="w-full py-2 px-4 text-[15px] font-medium tracking-wide rounded-md text-white bg-[#618792]/90 hover:bg-[#618792] focus:outline-none cursor-pointer">
                             Sign in
                         </button>
                     </form>
 
-                    <p class="text-slate-900 text-sm mt-6 text-center">
+                    <p class="text-gray-900 text-sm mt-6 text-center">
                         Don’t have an account?
                         <a href="javascript:void(0);"
-                            class="text-blue-600 hover:underline font-semibold to-register">Register here</a>
+                            class="text-[#618792]/90 hover:underline font-semibold to-register">Register here</a>
                     </p>
                 </div>
             </div>
@@ -247,49 +240,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- REGISTER FORM -->
         <div id="register-form" class="flex flex-col items-center justify-center py-6 px-4 hidden">
             <div class="max-w-[480px] w-full">
-                <a href="#"><img src="../src/img/books.png" alt="logo"
-                        class="w-20 mb-8 mx-auto block" /></a>
-                <div class="p-6 sm:p-8 rounded-2xl bg-white border border-gray-200 shadow-sm">
-                    <h1 class="text-slate-900 text-center text-3xl font-semibold">Register</h1>
+                <a href="#"><img src="../src/img/books.png" alt="logo" class="w-20 mb-8 mx-auto block" /></a>
+                <div class="p-6 sm:p-8 rounded-2xl bg-white border border-[#618792]/50 shadow-sm">
+                    <h1 class="text-gray-900] text-center text-3xl font-semibold">Register</h1>
 
 
-                <form method="POST">
-                    <input type="hidden" name="action" value="register">
-                    <div class="space-y-6">
-                        <div>
-                            <label class="text-slate-900 text-sm font-medium mb-2 block">Email</label>
-                            <input name="email" type="email" required
-                                class="text-slate-900 bg-white border border-gray-300 w-full text-sm px-4 py-3 rounded-md outline-blue-500"
-                                placeholder="Enter email" />
+                    <form method="POST">
+                        <input type="hidden" name="action" value="register">
+                        <div class="space-y-6">
+                            <div>
+                                <label class="text-[#618792] text-sm font-medium mb-2 block">Email</label>
+                                <input name="email" type="email" required
+                                    class="text-gray-900 bg-white border border-[#618792]/60 w-full text-sm px-4 py-3 rounded-md outline-[#618792]/90"
+                                    placeholder="Enter email" />
+                            </div>
+                            <div>
+                                <label class="text-[#618792] text-sm font-medium mb-2 block">Password</label>
+                                <input name="password" type="password" required
+                                    class="text-gray-900 bg-white border border-gray-300 w-full text-sm px-4 py-3 rounded-md outline-[#618792]/90"
+                                    placeholder="Enter password" />
+                            </div>
+                            <div>
+                                <label class="text-[#618792] text-sm font-medium mb-2 block">Confirm Password</label>
+                                <input name="cpassword" type="password" required
+                                    class="text-gray-900 bg-white border border-gray-300 w-full text-sm px-4 py-3 rounded-md outline-[#618792]/90"
+                                    placeholder="Confirm password" />
+                            </div>
                         </div>
-                        <div>
-                            <label class="text-slate-900 text-sm font-medium mb-2 block">Password</label>
-                            <input name="password" type="password" required
-                                class="text-slate-900 bg-white border border-gray-300 w-full text-sm px-4 py-3 rounded-md outline-blue-500"
-                                placeholder="Enter password" />
-                        </div>
-                        <div>
-                            <label class="text-slate-900 text-sm font-medium mb-2 block">Confirm Password</label>
-                            <input name="cpassword" type="password" required
-                                class="text-slate-900 bg-white border border-gray-300 w-full text-sm px-4 py-3 rounded-md outline-blue-500"
-                                placeholder="Confirm password" />
-                        </div>
-                    </div>
 
-                    <div class="mt-12">
-                        <button type="submit"
-                            class="w-full py-3 px-4 text-sm tracking-wider font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none cursor-pointer">
-                            Create an account
-                        </button>
-                    </div>
-                    <p class="text-slate-600 text-sm mt-6 text-center">
-                        Already have an account?
-                        <a href="javascript:void(0);"
-                            class="text-blue-600 font-medium hover:underline ml-1 to-login">Login here</a>
-                    </p>
-                </form>
+                        <div class="mt-12">
+                            <button type="submit"
+                                class="w-full py-3 px-4 text-sm tracking-wider font-medium rounded-md text-white bg-[#618792]/90 hover:bg-[#618792] focus:outline-none cursor-pointer">
+                                Create an account
+                            </button>
+                        </div>
+                        <p class="text-gray-900 text-sm mt-6 text-center">
+                            Already have an account?
+                            <a href="javascript:void(0);"
+                                class="text-[#618792] font-medium hover:underline ml-1 to-login">Login here</a>
+                        </p>
+                    </form>
+                </div>
             </div>
-        </div>
     </main>
     <footer class="z-20 w-full bg-blue-200 place-self-end  mt-auto">
         <div class="mx-10 px-2 sm:px-6 lg:px-8">
@@ -325,28 +317,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </html>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const loginForm = document.getElementById('login-form');
-    const registerForm = document.getElementById('register-form');
-    const switchToLogin = document.querySelectorAll('.to-login');
-    const switchToRegister = document.querySelectorAll('.to-register');
+    document.addEventListener('DOMContentLoaded', () => {
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const switchToLogin = document.querySelectorAll('.to-login');
+        const switchToRegister = document.querySelectorAll('.to-register');
 
-    switchToLogin.forEach(btn => btn.addEventListener('click', () => {
-        registerForm.classList.add('hidden');
-        loginForm.classList.remove('hidden');
-    }));
-    switchToRegister.forEach(btn => btn.addEventListener('click', () => {
-        loginForm.classList.add('hidden');
-        registerForm.classList.remove('hidden');
-    }));
-});
+        switchToLogin.forEach(btn => btn.addEventListener('click', () => {
+            registerForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+        }));
+        switchToRegister.forEach(btn => btn.addEventListener('click', () => {
+            loginForm.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+        }));
+    });
 
-document.querySelector('.to-register').addEventListener('click', () => {
-    document.getElementById('loginForm').classList.add('hidden');
-    document.getElementById('registerForm').classList.remove('hidden');
-});
-document.querySelector('.to-login').addEventListener('click', () => {
-    document.getElementById('registerForm').classList.add('hidden');
-    document.getElementById('loginForm').classList.remove('hidden');
-});
+    document.querySelector('.to-register').addEventListener('click', () => {
+        document.getElementById('loginForm').classList.add('hidden');
+        document.getElementById('registerForm').classList.remove('hidden');
+    });
+    document.querySelector('.to-login').addEventListener('click', () => {
+        document.getElementById('registerForm').classList.add('hidden');
+        document.getElementById('loginForm').classList.remove('hidden');
+    });
 </script>

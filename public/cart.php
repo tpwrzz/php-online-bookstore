@@ -6,36 +6,41 @@ include('../src/scripts/db-connect.php');
 // Структура корзины: [book_id => quantity]
 $booksInCart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
 
-if (empty($booksInCart)) {
-    echo "<p class='text-center py-10'>Your cart is empty.</p>";
+if (!$isLoggedIn) {
+    header("Location: auth.php");
     exit;
 }
-
-// Получаем книги из базы
-$bookIds = array_keys($booksInCart);
-$placeholders = implode(',', array_fill(0, count($bookIds), '?'));
-$sql = "SELECT book_id, title, price, cover_img FROM books WHERE book_id IN ($placeholders)";
-$stmt = $conn->prepare($sql);
-$types = str_repeat('i', count($bookIds));
-$stmt->bind_param($types, ...$bookIds);
-$stmt->execute();
-$result = $stmt->get_result();
-
-// Собираем все книги в массив для удобного вывода
 $cartItems = [];
 $total = 0;
-while ($row = $result->fetch_assoc()) {
-    $qty = $booksInCart[$row['book_id']];
-    $subtotal = $row['price'] * $qty;
-    $total += $subtotal;
-    $cartItems[] = [
-        'id' => $row['book_id'],
-        'title' => $row['title'],
-        'price' => $row['price'],
-        'quantity' => $qty,
-        'subtotal' => $subtotal,
-        'cover' => $row['cover_img']
-    ];
+if (empty($booksInCart)) {
+    $result = [];
+
+} else {
+    // Получаем книги из базы
+    $bookIds = array_keys($booksInCart);
+    $placeholders = implode(',', array_fill(0, count($bookIds), '?'));
+    $sql = "SELECT book_id, title, price, cover_img FROM books WHERE book_id IN ($placeholders)";
+    $stmt = $conn->prepare($sql);
+    $types = str_repeat('i', count($bookIds));
+    $stmt->bind_param($types, ...$bookIds);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    // Собираем все книги в массив для удобного вывода
+
+    while ($row = $result->fetch_assoc()) {
+        $qty = $booksInCart[$row['book_id']];
+        $subtotal = $row['price'] * $qty;
+        $total += $subtotal;
+        $cartItems[] = [
+            'id' => $row['book_id'],
+            'title' => $row['title'],
+            'price' => $row['price'],
+            'quantity' => $qty,
+            'subtotal' => $subtotal,
+            'cover' => $row['cover_img']
+        ];
+    }
 }
 ?>
 
@@ -81,15 +86,9 @@ while ($row = $result->fetch_assoc()) {
                     <!-- Desktop Menu -->
                     <div class="hidden sm:ml-6 sm:block">
                         <div class="flex space-x-4">
-                            <a href="#" aria-current="page"
+                            <a href="../index.php" aria-current="page"
                                 class="rounded-md bg-[#618792] px-3 py-2 text-lg font-medium text-white dark:bg-gray-950/50 hover:bg-gray-950/70">Online
                                 Bookstore</a>
-                            <a href="#"
-                                class="rounded-md px-3 py-2 text-lg font-medium text-[#618792] hover:bg-white/40">Books
-                                under €5</a>
-                            <a href="#"
-                                class="rounded-md px-3 py-2 text-lg font-medium text-[#618792] hover:bg-white/40">Redaction
-                                Selected</a>
                         </div>
                     </div>
                 </div>
@@ -111,23 +110,12 @@ while ($row = $result->fetch_assoc()) {
                     </a>
                     </button>
                     <el-dropdown class="relative ml-3">
-                        <button onclick="window.location.href='<?=
-                            isset($_SESSION['user_id']) ? '../secure/user/myinfo.php' : 'auth.php'
-                            ?>'" class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
+                        <a href='<?= isset($_SESSION['user_id']) ? "../secure/user/myinfo.php" : "public/auth.php" ?>'
+                            class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
                             <span class="sr-only">Open user menu</span>
-                            <img src="../src/img/avatar.png" alt="User Avatar" class="size-10 rounded-full" />
-                        </button>
-                        <el-menu anchor="bottom end" popover
-                            class="w-48 origin-top-right rounded-md bg-white py-1 shadow-lg outline outline-black/5 dark:bg-gray-800 dark:shadow-none dark:-outline-offset-1 dark:outline-white/10">
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-[#1b1b1e] focus:bg-[#618792]/90 dark:text-gray-300 dark:focus:bg-white/5">Your
-                                profile</a>
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-[#1b1b1e] focus:bg-[#618792]/90 dark:text-gray-300 dark:focus:bg-white/5">Settings</a>
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-[#1b1b1e] focus:bg-[#618792]/90 dark:text-gray-300 dark:focus:bg-white/5">Sign
-                                out</a>
-                        </el-menu>
+                            <img src="<?= isset($_SESSION['user_id']) ? '../src/img/avatar.png' : '../src/img/login.png' ?>"
+                                alt="User Avatar" class="size-10 rounded-full" />
+                        </a>
                     </el-dropdown>
                 </div>
             </div>
@@ -185,6 +173,7 @@ while ($row = $result->fetch_assoc()) {
 
             <div class="grid lg:grid-cols-3 gap-10 mt-12">
                 <div class="lg:col-span-2 space-y-4">
+                    <?php if (!empty($cartItems)): ?>
                     <?php foreach ($cartItems as $item): ?>
                     <div class="grid grid-cols-2 sm:grid-cols-3 items-start sm:gap-4 gap-6 cart-item"
                         data-price="<?= $item['price'] ?>">
@@ -236,6 +225,11 @@ while ($row = $result->fetch_assoc()) {
                     </div>
                     <hr class="border-gray-300" />
                     <?php endforeach; ?>
+                    <?php else: ?>
+                    <div class="text-center p-4 bg-gray-100 rounded text-gray-700">
+                        Your cart is empty.
+                    </div>
+                    <?php endif; ?>
                 </div>
 
                 <div class="bg-gray-100 rounded-md p-4 h-max">
@@ -244,15 +238,19 @@ while ($row = $result->fetch_assoc()) {
                         <li class="flex flex-wrap gap-4 text-sm text-slate-900" id="total">Total <span
                                 class="ml-auto font-semibold">€
                                 <?= number_format($total, 2) ?>
-                            </span></li>
+                            </span>
+                        </li>
                     </ul>
 
                     <div class="mt-8 space-y-3">
+                        <?php if (!empty($cartItems)): ?>
                         <button type="button" id="checkout-btn"
                             class="text-sm px-4 py-2.5 w-full font-medium tracking-wide bg-gray-800 hover:bg-gray-900 text-white rounded-md cursor-pointer">Checkout</button>
+                        <?php endif ?>
                         <a href="../index.php"
-                            class="text-sm px-4 py-2.5 w-full font-medium tracking-wide bg-transparent text-slate-900 border border-gray-300 rounded-md inline-block text-center">Continue
-                            Shopping</a>
+                            class="text-sm px-4 py-2.5 w-full font-medium tracking-wide bg-transparent text-slate-900 border border-gray-300 rounded-md inline-block text-center">
+                            Continue Shopping
+                        </a>
                     </div>
                 </div>
             </div>
@@ -342,7 +340,7 @@ while ($row = $result->fetch_assoc()) {
         });
     });
 
-document.getElementById('checkout-btn').addEventListener('click', () => {
+    document.getElementById('checkout-btn').addEventListener('click', () => {
         <?php if ($isLoggedIn): ?>
             // если залогинен, переходим на форму доставки
             window.location.href = 'order.php';

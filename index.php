@@ -1,5 +1,6 @@
 <?php
 session_start();
+include('src/scripts/db-connect.php');
 $isLoggedIn = isset($_SESSION['user_id']); ?>
 <!doctype html>
 <html lang="en">
@@ -46,12 +47,6 @@ $isLoggedIn = isset($_SESSION['user_id']); ?>
                             <a href="#" aria-current="page"
                                 class="rounded-md bg-[#618792] px-3 py-2 text-lg font-medium text-white dark:bg-gray-950/50 hover:bg-gray-950/70">Online
                                 Bookstore</a>
-                            <a href="#"
-                                class="rounded-md px-3 py-2 text-lg font-medium text-[#618792] hover:bg-white/40">Books
-                                under $5</a>
-                            <a href="#"
-                                class="rounded-md px-3 py-2 text-lg font-medium text-[#618792] hover:bg-white/40">Redaction
-                                Selected</a>
                         </div>
                     </div>
                 </div>
@@ -70,25 +65,13 @@ $isLoggedIn = isset($_SESSION['user_id']); ?>
                             </span>
                         <?php endif; ?>
                     </a>
-                    </button>
                     <el-dropdown class="relative ml-3">
-                        <button onclick="window.location.href='<?=
-                            isset($_SESSION['user_id']) ? 'secure/user/myinfo.php' : 'public/auth.php'
-                            ?>'" class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
+                        <a href='<?= isset($_SESSION['user_id']) ? "secure/user/myinfo.php" : "public/auth.php" ?>'
+                            class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
                             <span class="sr-only">Open user menu</span>
-                            <img src="src/img/avatar.png" alt="User Avatar" class="size-10 rounded-full" />
-                        </button>
-                        <el-menu anchor="bottom end" popover
-                            class="w-48 origin-top-right rounded-md bg-white py-1 shadow-lg outline outline-black/5 dark:bg-gray-800 dark:shadow-none dark:-outline-offset-1 dark:outline-white/10">
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-[#1b1b1e] focus:bg-gray-100 dark:text-gray-300 dark:focus:bg-white/5">Your
-                                profile</a>
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-[#1b1b1e] focus:bg-gray-100 dark:text-gray-300 dark:focus:bg-white/5">Settings</a>
-                            <a href="#"
-                                class="block px-4 py-2 text-sm text-[#1b1b1e] focus:bg-gray-100 dark:text-gray-300 dark:focus:bg-white/5">Sign
-                                out</a>
-                        </el-menu>
+                            <img src="<?= isset($_SESSION['user_id']) ? 'src/img/avatar.png' : 'src/img/login.png' ?>"
+                                alt="User Avatar" class="size-10 rounded-full" />
+                        </a>
                     </el-dropdown>
                 </div>
             </div>
@@ -179,8 +162,6 @@ $isLoggedIn = isset($_SESSION['user_id']); ?>
         </aside>
 
         <?php
-        include('src/scripts/db-connect.php');
-
         // === Pagination ===
         $cardsPerPage = 12;
         $currentPage = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
@@ -263,37 +244,43 @@ LIMIT ? OFFSET ?
 
         <main class="flex-1 m-5">
             <div class="grid gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 max-w-full mx-5">
-                <?php while ($row = $result->fetch_assoc()): ?>
-                    <div
-                        class="bg-white rounded-2xl shadow hover:shadow-md transition transform hover:-translate-y-1 flex flex-col justify-between">
-                        <a href="public/book.php?id=<?= $row['book_id'] ?>" class="block">
-                            <div
-                                class="aspect-[3/4] w-full overflow-hidden rounded-t-2xl flex justify-center items-center bg-gray-100">
-                                <img src="src/img/covers/<?= $row['cover_img'] ?>"
-                                    alt="<?= htmlspecialchars($row['title']) ?>" class="object-contain w-[340px] h-[420px]">
+                <?php if ($result && $result->num_rows > 0): ?>
+                    <?php while ($row = $result->fetch_assoc()): ?>
+                        <div
+                            class="bg-white rounded-2xl shadow hover:shadow-md transition transform hover:-translate-y-1 flex flex-col justify-between">
+                            <a href="public/book.php?id=<?= $row['book_id'] ?>" class="block">
+                                <div
+                                    class="aspect-[3/4] w-full overflow-hidden rounded-t-2xl flex justify-center items-center bg-gray-100">
+                                    <img src="src/img/covers/<?= $row['cover_img'] ?>"
+                                        alt="<?= htmlspecialchars($row['title']) ?>" class="object-contain w-[340px] h-[420px]">
+                                </div>
+                            </a>
+                            <div class="flex justify-between items-center p-4">
+                                <div class="flex flex-col w-[70%]">
+                                    <h3 class="text-lg font-semibold text-[#1b1b1e] truncate">
+                                        <?= htmlspecialchars($row['title']) ?>
+                                    </h3>
+                                    <p class="text-sm text-gray-600 mb-1 truncate"><?= htmlspecialchars($row['author_name']) ?>
+                                    </p>
+                                    <p class="text-sm text-gray-500 mb-1 truncate"><?= htmlspecialchars($row['genre_name']) ?>
+                                    </p>
+                                    <p class="font-medium text-[#618792]"><?= number_format($row['price'], 2) ?> €</p>
+                                </div>
+                                <form action="src/scripts/add-to-cart.php" method="POST" class="ml-3 flex-shrink-0">
+                                    <input type="hidden" name="book_id" value="<?= $row['book_id'] ?>">
+                                    <button type="submit"
+                                        class="bg-[#618792]/90 text-white py-2 px-4 rounded-md font-medium hover:bg-[#618792] transition">
+                                        Add
+                                    </button>
+                                </form>
                             </div>
-                        </a>
-                        <div class="flex justify-between items-center p-4">
-                            <div class="flex flex-col w-[70%]">
-                                <h3 class="text-lg font-semibold text-[#1b1b1e] truncate">
-                                    <?= htmlspecialchars($row['title']) ?>
-                                </h3>
-                                <p class="text-sm text-gray-600 mb-1 truncate"><?= htmlspecialchars($row['author_name']) ?>
-                                </p>
-                                <p class="text-sm text-gray-500 mb-1 truncate"><?= htmlspecialchars($row['genre_name']) ?>
-                                </p>
-                                <p class="font-medium text-[#618792]"><?= number_format($row['price'], 2) ?> €</p>
-                            </div>
-                            <form action="src/scripts/add-to-cart.php" method="POST" class="ml-3 flex-shrink-0">
-                                <input type="hidden" name="book_id" value="<?= $row['book_id'] ?>">
-                                <button type="submit"
-                                    class="bg-[#618792]/90 text-white py-2 px-4 rounded-md font-medium hover:bg-[#618792] transition">
-                                    Add
-                                </button>
-                            </form>
                         </div>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <div class="col-span-full text-center text-gray-500  text-lg">
+                        No books found.
                     </div>
-                <?php endwhile; ?>
+                <?php endif; ?>
             </div>
 
             <!-- Pagination -->
@@ -311,7 +298,9 @@ LIMIT ? OFFSET ?
                 </a>
 
                 <!-- Page numbers -->
-                <?php for ($p = 1; $p <= $totalPages; $p++): ?>
+                <?php if ($totalPages == 0)
+                    $totalPages = 1;
+                for ($p = 1; $p <= $totalPages; $p++): ?>
                     <a href="?<?= $queryString ?>&page=<?= $p ?>"
                         class="px-3 py-2 rounded-lg <?= $p == $currentPage ? 'bg-[#618792] text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300' ?>">
                         <?= $p ?>
