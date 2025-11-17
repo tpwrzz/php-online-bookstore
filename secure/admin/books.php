@@ -41,12 +41,13 @@ if (isset($_POST['create_book'])) {
     $coverFileName = null;
     if (!empty($_FILES['cover_image']['name'])) {
         $coverFileName = basename($_FILES['cover_image']['name']);
-        $targetPath = __DIR__ . "/../../src/images/covers/" . $coverFileName;
+        chdir("../../");
+        $targetPath = getcwd() . "/src/img/covers/" . $coverFileName;
         move_uploaded_file($_FILES['cover_image']['tmp_name'], $targetPath);
     }
 
     $stmt = $conn->prepare("
-        INSERT INTO books (title, author_id, genre_id, price, stock_qty, cover_image)
+        INSERT INTO books (title, author_id, genre_id, price, stock_qty, cover_img)
         VALUES (?, ?, ?, ?, ?, ?)
     ");
     $stmt->bind_param("siidss", $title, $author_id, $genre_id, $price, $stock_qty, $coverFileName);
@@ -69,16 +70,17 @@ if (isset($_POST['update_book'])) {
     // Handle cover upload if provided
     $coverFileName = null;
     if (!empty($_FILES['cover_image']['name'])) {
-        $targetDir = "../../src/images/covers/";
         $coverFileName = basename($_FILES["cover_image"]["name"]);
-        $targetFile = $targetDir . $coverFileName;
+        chdir("../../");
+        $targetPath = getcwd() . "/src/img/covers/" . $coverFileName;
+        $targetFile = $targetPath . $coverFileName;
 
         // Move uploaded file
         if (move_uploaded_file($_FILES["cover_image"]["tmp_name"], $targetFile)) {
             // ✅ Save just the file name in DB
             $stmt = $conn->prepare("
                 UPDATE books 
-                SET title=?, price=?, stock_qty=?, genre_id=?, author_id=?, cover_image=?
+                SET title=?, price=?, stock_qty=?, genre_id=?, author_id=?, cover_img=?
                 WHERE book_id=?
             ");
             $stmt->bind_param("sdiiisi", $title, $price, $stock_qty, $genre_id, $author_id, $coverFileName, $book_id);
@@ -150,6 +152,7 @@ $books = $conn->query("
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="../../src/img/books.png" type="image/x-icon">
+    <title>Books Admin Page</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
@@ -362,7 +365,7 @@ $books = $conn->query("
                                     <?php else: ?>
                                         <div class="text-gray-400 text-sm mb-2">No image</div>
                                     <?php endif; ?>
-                                    <input type="file" name="cover_image" accept="image/*" class="text-sm">
+                                    <input type="file" name="cover_image" accept="image/*" class="text-sm cursor-pointer font-bold">
                                 </td>
 
                                 <!-- Actions -->
@@ -405,7 +408,7 @@ $books = $conn->query("
             </div>
         </div>
     </div>
-    <footer class="z-20 w-full bg-blue-200 place-self-end  mt-auto">
+   <footer class="z-20 w-full bg-blue-200 place-self-end mt-auto">
         <div class="mx-10 px-2 sm:px-6 lg:px-8">
             <div class="relative flex h-16 items-center justify-between">
                 <span
@@ -413,31 +416,9 @@ $books = $conn->query("
                     2025 <a href="https://github.com/tpwrzz/php-online-bookstore" class="hover:underline">Poverjuc
                         Tatiana</a> IAFR2302
                 </span>
-                <ul class="flex flex-wrap items-center mt-3 text-sm font-medium sm:mt-0">
-                    <li>
-                        <a href="#"
-                            class="rounded-md px-3 py-2 text-sm font-medium text-[#618792]/80 hover:bg-white/20 hover:text-[#618792]">About</a>
-                    </li>
-                    <li>
-                        <a href="#"
-                            class="rounded-md px-3 py-2 text-sm font-medium text-[#618792]/80 hover:bg-white/20 hover:text-[#618792]">Privacy
-                            Policy</a>
-                    </li>
-                    <li>
-                        <a href="#"
-                            class="rounded-md px-3 py-2 text-sm font-medium text-[#618792]/80 hover:bg-white/20 hover:text-[#618792]">Licensing</a>
-                    </li>
-                    <li>
-                        <a href="#"
-                            class="rounded-md px-3 py-2 text-sm font-medium text-[#618792]/80 hover:bg-white/20 hover:text-[#618792]">Contact</a>
-                    </li>
-                </ul>
             </div>
         </div>
     </footer>
-
-
-
 </body>
 
 </html>

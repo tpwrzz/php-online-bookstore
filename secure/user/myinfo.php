@@ -91,6 +91,7 @@ $orders = $stmt->get_result();
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="../../src/img/books.png" type="image/x-icon">
+    <title>User Page</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
@@ -191,17 +192,16 @@ $orders = $stmt->get_result();
         <nav class="flex my-6 mx-10" aria-label="Breadcrumb">
             <ol class="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
                 <li class="inline-flex items-center">
-                    <a href="../index.php"
+                    <a href="../../index.php"
                         class="inline-flex items-center text-sm font-medium text-[#618792] hover:text-[#1b1b1e]">
                         <svg class="w-3 h-3 me-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
                             fill="currentColor" viewBox="0 0 20 20">
                             <path
                                 d="m19.707 9.293-2-2-7-7a1 1 0 0 0-1.414 0l-7 7-2 2a1 1 0 0 0 1.414 1.414L2 10.414V18a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a2 2 0 0 0 2-2v-7.586l.293.293a1 1 0 0 0 1.414-1.414Z" />
                         </svg>
-                        Home
+                        Main Page
                     </a>
                 </li>
-
                 <li aria-current="page">
                     <div class="flex items-center">
                         <svg class="rtl:rotate-180 w-3 h-3 text-[#618792] mx-1" aria-hidden="true"
@@ -209,7 +209,7 @@ $orders = $stmt->get_result();
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="m1 9 4-4-4-4" />
                         </svg>
-                        <span class="ms-1 text-sm font-medium text-[#618792] md:ms-2">Your orders and info</span>
+                        <span class="ms-1 text-sm font-medium text-[#618792] md:ms-2">Orders and info</span>
                     </div>
                 </li>
             </ol>
@@ -382,7 +382,7 @@ $orders = $stmt->get_result();
             </div>
         </div>
     </main>
-    <footer class="z-20 w-full bg-blue-200 place-self-end  mt-auto">
+<footer class="z-20 w-full bg-blue-200 place-self-end mt-auto">
         <div class="mx-10 px-2 sm:px-6 lg:px-8">
             <div class="relative flex h-16 items-center justify-between">
                 <span
@@ -390,25 +390,6 @@ $orders = $stmt->get_result();
                     2025 <a href="https://github.com/tpwrzz/php-online-bookstore" class="hover:underline">Poverjuc
                         Tatiana</a> IAFR2302
                 </span>
-                <ul class="flex flex-wrap items-center mt-3 text-sm font-medium sm:mt-0">
-                    <li>
-                        <a href="#"
-                            class="rounded-md px-3 py-2 text-sm font-medium text-[#618792]/80 hover:bg-white/20 hover:text-[#618792]">About</a>
-                    </li>
-                    <li>
-                        <a href="#"
-                            class="rounded-md px-3 py-2 text-sm font-medium text-[#618792]/80 hover:bg-white/20 hover:text-[#618792]">Privacy
-                            Policy</a>
-                    </li>
-                    <li>
-                        <a href="#"
-                            class="rounded-md px-3 py-2 text-sm font-medium text-[#618792]/80 hover:bg-white/20 hover:text-[#618792]">Licensing</a>
-                    </li>
-                    <li>
-                        <a href="#"
-                            class="rounded-md px-3 py-2 text-sm font-medium text-[#618792]/80 hover:bg-white/20 hover:text-[#618792]">Contact</a>
-                    </li>
-                </ul>
             </div>
         </div>
     </footer>

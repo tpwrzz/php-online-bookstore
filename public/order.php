@@ -50,16 +50,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (empty($cartItems)) {
         $errors[] = "Your cart is empty";
     } else {
-        $stmt = $conn->prepare("INSERT INTO orders (user_id, full_name, address, total_price, status, created_at) VALUES (?, ?, ?, ?, 'Pending', NOW())");
-        $stmt->bind_param("issd", $_SESSION['user_id'], $full_name, $address, $totalPrice);
-        if ($stmt->execute()) {
+        // Start transaction
+        $conn->begin_transaction();
+
+        try {
+            // INSERT ORDER
+            $stmt = $conn->prepare("
+                INSERT INTO orders (user_id, full_name, address, total_price, status, created_at)
+                VALUES (?, ?, ?, ?, 'Pending', NOW())
+            ");
+            $stmt->bind_param("issd", $_SESSION['user_id'], $full_name, $address, $totalPrice);
+            $stmt->execute();
+
+            $order_id = $stmt->insert_id;
+
+            // INSERT ORDER ITEMS + UPDATE STOCK
+            $stmtItem = $conn->prepare("
+                INSERT INTO order_items (order_id, book_id, quantity, price_each)
+                VALUES (?, ?, ?, ?)
+            ");
+
+            $stmtStock = $conn->prepare("
+                UPDATE books SET stock_qty = stock_qty - ? WHERE book_id = ? AND stock_qty >= ?
+            ");
+
+            foreach ($booksInCart as $book_id => $qty) {
+                // Find price
+                foreach ($cartItems as $item) {
+                    if ($item['title'] == $item['title']) {
+                        $price = $item['price'];
+                    }
+                }
+
+                // Insert order item
+                $stmtItem->bind_param("iiid", $order_id, $book_id, $qty, $price);
+                $stmtItem->execute();
+
+                // Update stock (ensure no negative stock)
+                $stmtStock->bind_param("iii", $qty, $book_id, $qty);
+                $stmtStock->execute();
+
+                if ($stmtStock->affected_rows === 0) {
+                    throw new Exception("Not enough stock for book ID $book_id");
+                }
+            }
+
+            // All good → commit
+            $conn->commit();
+
             $success = true;
             unset($_SESSION['cart']);
-        } else {
-            $errors[] = "Failed to create order. Try again.";
+
+        } catch (Exception $e) {
+            $conn->rollback();
+            $errors[] = "Order failed: " . $e->getMessage();
         }
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -69,6 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="../src/img/books.png" type="image/x-icon">
+    <title>Order</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
@@ -247,7 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
         </div>
     </main>
-    <footer class="z-20 w-full bg-blue-200 place-self-end  mt-auto">
+   <footer class="z-20 w-full bg-blue-200 place-self-end mt-auto">
         <div class="mx-10 px-2 sm:px-6 lg:px-8">
             <div class="relative flex h-16 items-center justify-between">
                 <span
@@ -255,25 +304,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     2025 <a href="https://github.com/tpwrzz/php-online-bookstore" class="hover:underline">Poverjuc
                         Tatiana</a> IAFR2302
                 </span>
-                <ul class="flex flex-wrap items-center mt-3 text-sm font-medium sm:mt-0">
-                    <li>
-                        <a href="#"
-                            class="rounded-md px-3 py-2 text-sm font-medium text-[#618792]/80 hover:bg-white/20 hover:text-[#618792]">About</a>
-                    </li>
-                    <li>
-                        <a href="#"
-                            class="rounded-md px-3 py-2 text-sm font-medium text-[#618792]/80 hover:bg-white/20 hover:text-[#618792]">Privacy
-                            Policy</a>
-                    </li>
-                    <li>
-                        <a href="#"
-                            class="rounded-md px-3 py-2 text-sm font-medium text-[#618792]/80 hover:bg-white/20 hover:text-[#618792]">Licensing</a>
-                    </li>
-                    <li>
-                        <a href="#"
-                            class="rounded-md px-3 py-2 text-sm font-medium text-[#618792]/80 hover:bg-white/20 hover:text-[#618792]">Contact</a>
-                    </li>
-                </ul>
             </div>
         </div>
     </footer>

@@ -51,6 +51,7 @@ if (empty($booksInCart)) {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="../src/img/books.png" type="image/x-icon">
+    <title>Cart</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
@@ -256,7 +257,7 @@ if (empty($booksInCart)) {
             </div>
         </div>
     </main>
-    <footer class="z-20 w-full bg-blue-200 place-self-end  mt-auto">
+   <footer class="z-20 w-full bg-blue-200 place-self-end mt-auto">
         <div class="mx-10 px-2 sm:px-6 lg:px-8">
             <div class="relative flex h-16 items-center justify-between">
                 <span
@@ -264,25 +265,6 @@ if (empty($booksInCart)) {
                     2025 <a href="https://github.com/tpwrzz/php-online-bookstore" class="hover:underline">Poverjuc
                         Tatiana</a> IAFR2302
                 </span>
-                <ul class="flex flex-wrap items-center mt-3 text-sm font-medium sm:mt-0">
-                    <li>
-                        <a href="#"
-                            class="rounded-md px-3 py-2 text-sm font-medium text-[#618792]/80 hover:bg-white/20 hover:text-[#618792]">About</a>
-                    </li>
-                    <li>
-                        <a href="#"
-                            class="rounded-md px-3 py-2 text-sm font-medium text-[#618792]/80 hover:bg-white/20 hover:text-[#618792]">Privacy
-                            Policy</a>
-                    </li>
-                    <li>
-                        <a href="#"
-                            class="rounded-md px-3 py-2 text-sm font-medium text-[#618792]/80 hover:bg-white/20 hover:text-[#618792]">Licensing</a>
-                    </li>
-                    <li>
-                        <a href="#"
-                            class="rounded-md px-3 py-2 text-sm font-medium text-[#618792]/80 hover:bg-white/20 hover:text-[#618792]">Contact</a>
-                    </li>
-                </ul>
             </div>
         </div>
     </footer>
