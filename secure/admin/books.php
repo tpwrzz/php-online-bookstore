@@ -22,73 +22,120 @@ $booksPerPage = 10;
 $currentbooksPage = isset($_GET['books_page']) && is_numeric($_GET['books_page']) ? (int) $_GET['books_page'] : 1;
 $booksOffset = ($currentbooksPage - 1) * $booksPerPage;
 
-$totalBooks = $conn->query("SELECT COUNT(*) as total FROM books")->fetch_assoc()['total'];
-$totalbooksPages = max(ceil($totalBooks / $booksPerPage), 1);
+$totalbooks = $conn->query("SELECT COUNT(*) as total FROM books")->fetch_assoc()['total'];
+$totalbooksPages = max(ceil($totalbooks / $booksPerPage), 1);
+
+// Helper: sanitize string
+function sanitize($str)
+{
+    return trim(htmlspecialchars($str, ENT_QUOTES));
+}
 
 if (isset($_POST['create_book'])) {
-    $title = $_POST['title'];
-    $author_id = $_POST['author_id'];
-    $genre_id = $_POST['genre_id'];
-    $price = $_POST['price'];
-    $stock_qty = $_POST['stock_qty'];
+    $title = sanitize($_POST['title'] ?? '');
+    $author_id = (int) ($_POST['author_id'] ?? 0);
+    $genre_id = (int) ($_POST['genre_id'] ?? 0);
+    $price = floatval($_POST['price'] ?? 0);
+    $stock_qty = intval($_POST['stock_qty'] ?? 0);
+    $description = sanitize($_POST['description'] ?? '');
+    $published_at = sanitize($_POST['published_at'] ?? '');
+
+    $errors = [];
+
+    // Validation
+    if ($title === '' || strlen($title) > 255)
+        $errors[] = "Title is required (max 255 chars).";
+    if ($author_id <= 0)
+        $errors[] = "Please select a valid author.";
+    if ($genre_id <= 0)
+        $errors[] = "Please select a valid genre.";
+    if ($price < 0 || $price > 9999)
+        $errors[] = "Price must be between 0 and 9999.";
+    if ($stock_qty < 0 || $stock_qty > 9999)
+        $errors[] = "Stock quantity must be between 0 and 9999.";
+    if (strlen($description) > 1000)
+        $errors[] = "Description max length is 1000 chars.";
 
     $coverFileName = null;
     if (!empty($_FILES['cover_image']['name'])) {
         $coverFileName = basename($_FILES['cover_image']['name']);
         chdir("../../");
         $targetPath = getcwd() . "/src/img/covers/" . $coverFileName;
-        move_uploaded_file($_FILES['cover_image']['tmp_name'], $targetPath);
+        if (!move_uploaded_file($_FILES['cover_image']['tmp_name'], $targetPath)) {
+            $errors[] = "Image upload failed.";
+        }
     }
 
-    $stmt = $conn->prepare("
-        INSERT INTO books (title, author_id, genre_id, price, stock_qty, cover_img)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ");
-    $stmt->bind_param("siidss", $title, $author_id, $genre_id, $price, $stock_qty, $coverFileName);
-    $stmt->execute();
-
-    header("Location: books.php");
-    exit;
+    if (empty($errors)) {
+        $stmt = $conn->prepare("
+            INSERT INTO books (title, author_id, genre_id, price, stock_qty, cover_img, description,published_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?,?)
+        ");
+        $stmt->bind_param("siidisss", $title, $author_id, $genre_id, $price, $stock_qty, $coverFileName, $description, $published_at);
+        $stmt->execute();
+        header("Location: books.php");
+        exit;
+    }
 }
 
 if (isset($_POST['update_book'])) {
-    $book_id = $_POST['book_id'];
-    $title = $_POST['title'];
-    $price = (float) $_POST['price'];
-    $stock_qty = (int) $_POST['stock_qty'];
-    $genre_id = $_POST['genre_id'];
-    $author_id = $_POST['author_id'];
+    $book_id = intval($_POST['book_id'] ?? 0);
+    $title = sanitize($_POST['title'] ?? '');
+    $author_id = intval($_POST['author_id'] ?? 0);
+    $genre_id = intval($_POST['genre_id'] ?? 0);
+    $price = floatval($_POST['price'] ?? 0);
+    $stock_qty = intval($_POST['stock_qty'] ?? 0);
+    $description = sanitize($_POST['description'] ?? '');
+    $published_at = sanitize($_POST['published_at'] ?? '');
+
+    $errors = [];
+
+    // Validation
+    if ($book_id <= 0)
+        $errors[] = "Invalid book ID.";
+    if ($title === '' || strlen($title) > 255)
+        $errors[] = "Title is required (max 255 chars).";
+    if ($author_id <= 0)
+        $errors[] = "Please select a valid author.";
+    if ($genre_id <= 0)
+        $errors[] = "Please select a valid genre.";
+    if ($price < 0 || $price > 9999)
+        $errors[] = "Price must be between 0 and 9999.";
+    if ($stock_qty < 0 || $stock_qty > 9999)
+        $errors[] = "Stock quantity must be between 0 and 9999.";
+    if (strlen($description) > 1000)
+        $errors[] = "Description max length is 1000 chars.";
 
     $coverFileName = null;
     if (!empty($_FILES['cover_image']['name'])) {
-        $coverFileName = basename($_FILES["cover_image"]["name"]);
+        $coverFileName = basename($_FILES['cover_image']['name']);
         chdir("../../");
         $targetPath = getcwd() . "/src/img/covers/" . $coverFileName;
-        $targetFile = $targetPath . $coverFileName;
-
-        if (move_uploaded_file($_FILES["cover_image"]["tmp_name"], $targetFile)) {
-            $stmt = $conn->prepare("
-                UPDATE books 
-                SET title=?, price=?, stock_qty=?, genre_id=?, author_id=?, cover_img=?
-                WHERE book_id=?
-            ");
-            $stmt->bind_param("sdiiisi", $title, $price, $stock_qty, $genre_id, $author_id, $coverFileName, $book_id);
-        } else {
-            echo "<div class='text-red-600 text-center mb-2'>❌ Image upload failed.</div>";
+        if (!move_uploaded_file($_FILES['cover_image']['tmp_name'], $targetPath)) {
+            $errors[] = "Image upload failed.";
         }
-    } else {
-        $stmt = $conn->prepare("
-            UPDATE books 
-            SET title=?, price=?, stock_qty=?, genre_id=?, author_id=?
-            WHERE book_id=?
-        ");
-        $stmt->bind_param("sdiiii", $title, $price, $stock_qty, $genre_id, $author_id, $book_id);
     }
 
-    if (isset($stmt))
+    if (empty($errors)) {
+        if ($coverFileName !== null) {
+            $stmt = $conn->prepare("
+                UPDATE books
+                SET title=?, author_id=?, genre_id=?, price=?, stock_qty=?, cover_img=?, description=?, published_at=?
+                WHERE book_id=?
+            ");
+            $stmt->bind_param("siidisssi", $title, $author_id, $genre_id, $price, $stock_qty, $coverFileName, $description, $published_at, $book_id);
+        } else {
+            $stmt = $conn->prepare("
+                UPDATE books
+                SET title=?, author_id=?, genre_id=?, price=?, stock_qty=?, description=?, published_at=?
+                WHERE book_id=?
+            ");
+            $stmt->bind_param("siidissi", $title, $author_id, $genre_id, $price, $stock_qty, $description, $published_at, $book_id);
+        }
         $stmt->execute();
-    header("Location: books.php?books_page=$currentBooksPage");
-    exit;
+        header("Location: books.php?books_page=$currentBooksPage");
+        exit;
+    }
 }
 
 if (isset($_POST['delete_book'])) {
@@ -121,7 +168,7 @@ if (isset($_POST['delete_book'])) {
 }
 
 $books = $conn->query("
-    SELECT b.book_id, b.title, b.author_id, b.price, b.stock_qty, b.cover_img, g.name AS genre, b.genre_id
+    SELECT b.book_id, b.title, b.author_id, b.price, b.description, b.stock_qty,b.published_at, b.cover_img, g.name AS genre, b.genre_id
     FROM books b
     LEFT JOIN genres g ON b.genre_id = g.genre_id
     ORDER BY b.book_id ASC
@@ -182,7 +229,7 @@ $books = $conn->query("
                 <!-- Right Icons -->
                 <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
                     <el-dropdown class="relative ml-3">
-                        <div 
+                        <div
                             class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
                             <span class="sr-only">Open user menu</span>
                             <img src="../../src/img/setting.png" alt="User Avatar" class="size-10 rounded-full" />
@@ -225,24 +272,22 @@ $books = $conn->query("
             <!-- Books Tab -->
             <div id="books" class="tab-content mb-4">
                 <h2 class="text-xl font-semibold mb-4">Manage Books</h2>
+                <?php if (!empty($errors)): ?>
+                    <div class="mb-4 p-2 border border-red-500 bg-red-100 text-red-700 rounded">
+                        <ul class="list-disc list-inside">
+                            <?php foreach ($errors as $err): ?>
+                                <li><?= htmlspecialchars($err) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
                 <h3 class="text-lg font-semibold mb-4">Add Book</h3>
                 <form method="POST" enctype="multipart/form-data" class="flex flex-wrap gap-2 mb-6">
                     <!-- Title -->
                     <input type="text" name="title" placeholder="Title" required class="border px-2 py-1 rounded w-40">
-
-                    <!-- Author -->
-                    <select name="author_id" required class="border px-2 py-1 rounded w-40">
-                        <option value="">Select author</option>
-                        <?php
-                        $allAuthors = $conn->query("SELECT author_id, first_name, last_name FROM authors ORDER BY first_name");
-                        while ($a = $allAuthors->fetch_assoc()):
-                            ?>
-                            <option value="<?= $a['author_id'] ?>">
-                                <?= htmlspecialchars($a['first_name'] . ' ' . $a['last_name']) ?>
-                            </option>
-                        <?php endwhile; ?>
-                    </select>
-
+                    <!-- Description -->
+                    <textarea name="description" required placeholder="Description (optional, max 1000 chars)"
+                        class="border px-2 py-1 rounded w-full md:w-96 resize-none"></textarea>
                     <!-- Genre -->
                     <select name="genre_id" required class="border px-2 py-1 rounded w-40">
                         <option value="">Select genre</option>
@@ -255,7 +300,18 @@ $books = $conn->query("
                             </option>
                         <?php endwhile; ?>
                     </select>
-
+                    <!-- Author -->
+                    <select name="author_id" required class="border px-2 py-1 rounded w-40">
+                        <option value="">Select author</option>
+                        <?php
+                        $allAuthors = $conn->query("SELECT author_id, first_name, last_name FROM authors ORDER BY first_name");
+                        while ($a = $allAuthors->fetch_assoc()):
+                            ?>
+                            <option value="<?= $a['author_id'] ?>">
+                                <?= htmlspecialchars($a['first_name'] . ' ' . $a['last_name']) ?>
+                            </option>
+                        <?php endwhile; ?>
+                    </select>
                     <!-- Price -->
                     <input type="number" name="price" placeholder="Price (e.g. 3.99)" required
                         class="border px-2 py-1 rounded w-32" step="0.01" min="0">
@@ -263,9 +319,11 @@ $books = $conn->query("
                     <!-- Stock Quantity -->
                     <input type="number" name="stock_qty" placeholder="Qty" required
                         class="border px-2 py-1 rounded w-24" step="1" min="0">
-
+                    <!-- Published -->
+                    <input type="date" name="published_at" required class="border px-2 py-1 rounded w-32">
                     <!-- Cover Image -->
-                    <input type="file" name="cover_image" accept="image/*" class="border px-2 py-1 rounded w-60">
+                    <input type="file" name="cover_image" required accept="image/*"
+                        class="border px-2 py-1 rounded w-60">
 
                     <!-- Submit -->
                     <button type="submit" name="create_book" class="bg-blue-500 text-white px-4 py-1 rounded">
@@ -278,10 +336,12 @@ $books = $conn->query("
                         <tr>
                             <th class="px-4 py-2">ID</th>
                             <th class="px-4 py-2">Title</th>
+                            <th class="px-4 py-2">Description</th>
                             <th class="px-4 py-2">Genre</th>
                             <th class="px-4 py-2">Author</th>
                             <th class="px-4 py-2">Price (€)</th>
                             <th class="px-4 py-2">Stock q-ty</th>
+                            <th class="px-4 py-2">Published Date</th>
                             <th class="px-4 py-2">Cover image</th>
                             <th class="px-4 py-2">Actions</th>
 
@@ -295,13 +355,18 @@ $books = $conn->query("
                                 <td class="px-4 py-2">
                                     <form method="POST" enctype="multipart/form-data" class="flex flex-col space-y-2">
                                         <input type="hidden" name="book_id" value="<?= $row['book_id'] ?>">
-                                        <input type="text" name="title" value="<?= htmlspecialchars($row['title']) ?>"
+                                        <input type="text" name="title" required
+                                            value="<?= htmlspecialchars($row['title']) ?>"
                                             class="border px-2 py-1 rounded w-full">
                                 </td>
-
+                                <td class="px-4 py-2">
+                                    <textarea name="description" required
+                                        class="border px-2 py-1 rounded w-full h-16 resize-none"
+                                        placeholder="Description (max 1000 chars)"><?= htmlspecialchars($row['description'] ?? '') ?></textarea>
+                                </td>
                                 <!-- Genre -->
                                 <td class="px-4 py-2">
-                                    <select name="genre_id" class="border px-2 py-1 rounded w-full">
+                                    <select name="genre_id" required class="border px-2 py-1 rounded w-full">
                                         <?php
                                         $allGenres = $conn->query("SELECT genre_id, name FROM genres ORDER BY name");
                                         while ($g = $allGenres->fetch_assoc()):
@@ -315,7 +380,7 @@ $books = $conn->query("
 
                                 <!-- Author -->
                                 <td class="px-4 py-2">
-                                    <select name="author_id" class="border px-2 py-1 rounded w-full">
+                                    <select name="author_id" required class="border px-2 py-1 rounded w-full">
                                         <?php
                                         $allAuthors = $conn->query("SELECT author_id,  first_name, last_name FROM authors ORDER BY first_name");
                                         while ($a = $allAuthors->fetch_assoc()):
@@ -329,17 +394,22 @@ $books = $conn->query("
 
                                 <!-- Price -->
                                 <td class="px-4 py-2">
-                                    <input type="number" name="price"
+                                    <input type="number" required name="price"
                                         value="<?= number_format($row['price'], 2, '.', '') ?>" step="0.01" min="0"
                                         class="border px-2 py-1 rounded w-24">
                                 </td>
 
                                 <!-- Stock -->
                                 <td class="px-4 py-2">
-                                    <input type="number" name="stock_qty" value="<?= (int) $row['stock_qty'] ?>" min="1"
-                                        max="9999" step="1" class="border px-2 py-1 rounded w-20">
+                                    <input type="number" required name="stock_qty" value="<?= (int) $row['stock_qty'] ?>"
+                                        min="0" max="9999" step="1" class="border px-2 py-1 rounded w-20">
                                 </td>
-
+                                <!-- Published -->
+                                <td class="px-4 py-2">
+                                    <input type="date" required name="published_at"
+                                        value="<?= htmlspecialchars($row['published_at'] ?? '') ?>"
+                                        class="border px-2 py-1 rounded w-32">
+                                </td>
                                 <!-- Cover -->
                                 <td class="px-4 py-2 text-center">
                                     <?php if (!empty($row['cover_img'])): ?>
@@ -348,7 +418,8 @@ $books = $conn->query("
                                     <?php else: ?>
                                         <div class="text-gray-400 text-sm mb-2">No image</div>
                                     <?php endif; ?>
-                                    <input type="file" name="cover_image" accept="image/*" class="text-sm cursor-pointer font-bold">
+                                    <input type="file" name="cover_image" accept="image/*"
+                                        class="text-sm cursor-pointer font-bold">
                                 </td>
 
                                 <!-- Actions -->
@@ -391,7 +462,7 @@ $books = $conn->query("
             </div>
         </div>
     </div>
-   <footer class="z-20 w-full bg-blue-200 place-self-end mt-auto">
+    <footer class="z-20 w-full bg-blue-200 place-self-end mt-auto">
         <div class="mx-10 px-2 sm:px-6 lg:px-8">
             <div class="relative flex h-16 items-center justify-between">
                 <span

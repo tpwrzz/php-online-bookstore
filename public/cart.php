@@ -5,10 +5,6 @@ include('../src/scripts/db-connect.php');
 
 $booksInCart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
 
-if (!$isLoggedIn) {
-    header("Location: auth.php");
-    exit;
-}
 $cartItems = [];
 $total = 0;
 if (empty($booksInCart)) {
@@ -38,7 +34,6 @@ if (empty($booksInCart)) {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -106,7 +101,7 @@ if (empty($booksInCart)) {
                     </a>
                     </button>
                     <el-dropdown class="relative ml-3">
-                        <a href='<?= isset($_SESSION['user_id']) ? "../secure/user/myinfo.php" : "public/auth.php" ?>'
+                        <a href='<?= isset($_SESSION['user_id']) ? "../secure/user/myinfo.php" : "auth.php" ?>'
                             class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
                             <span class="sr-only">Open user menu</span>
                             <img src="<?= isset($_SESSION['user_id']) ? '../src/img/avatar.png' : '../src/img/login.png' ?>"
@@ -182,7 +177,6 @@ if (empty($booksInCart)) {
                                 <h3 class="text-base font-semibold text-slate-900">
                                     <?= htmlspecialchars($item['title']) ?>
                                 </h3>
-
                                 <button type="button" data-remove-id="<?= $item['id'] ?>"
                                     class="mt-4 font-semibold text-red-500 text-xs flex items-center gap-2 shrink-0 cursor-pointer">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 fill-current inline"
@@ -252,7 +246,7 @@ if (empty($booksInCart)) {
             </div>
         </div>
     </main>
-   <footer class="z-20 w-full bg-blue-200 place-self-end mt-auto">
+    <footer class="z-20 w-full bg-blue-200 place-self-end mt-auto">
         <div class="mx-10 px-2 sm:px-6 lg:px-8">
             <div class="relative flex h-16 items-center justify-between">
                 <span
@@ -308,7 +302,7 @@ if (empty($booksInCart)) {
             });
         });
 
-        document.querySelectorAll('.remove-btn').forEach(btn => {
+        document.querySelectorAll('[data-remove-id]').forEach(btn => {
             btn.addEventListener('click', () => {
                 btn.closest('.cart-item').remove();
                 console.log('Item removed');

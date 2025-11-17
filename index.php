@@ -197,7 +197,7 @@ $isLoggedIn = isset($_SESSION['user_id']); ?>
                     $orderSQL = 'ORDER BY books.price DESC';
                     break;
                 case 'newest':
-                    $orderSQL = 'ORDER BY books.published_at DESC';
+                    $orderSQL = 'ORDER BY books.published_at ASC';
                     break;
             }
         }

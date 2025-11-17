@@ -17,7 +17,6 @@ if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
 
 $orderId = (int) $_GET['id'];
 
-
 $sqlOrder = "
     SELECT 
         o.order_id,
@@ -66,8 +65,6 @@ $sqlItems = "
 
     WHERE oi.order_id = ?
 ";
-
-
 
 $stmt = $conn->prepare($sqlItems);
 $stmt->bind_param("i", $orderId);

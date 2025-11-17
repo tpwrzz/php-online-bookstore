@@ -25,41 +25,112 @@ $usersOffset = ($currentusersPage - 1) * $usersPerPage;
 $totalusers = $conn->query("SELECT COUNT(*) as total FROM users")->fetch_assoc()['total'];
 $totalusersPages = max(ceil($totalusers / $usersPerPage), 1);
 $users = $conn->query("SELECT user_id, username, email, role, created_at FROM users ORDER BY user_id ASC");
+function sanitize($input)
+{
+    return htmlspecialchars(trim($input));
+}
 
 if (isset($_POST['update_password'])) {
-    $hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
-    $stmt = $conn->prepare("UPDATE users SET password=? WHERE user_id=?");
-    $stmt->bind_param("si", $hash, $_POST['user_id']);
-    $stmt->execute();
-    header("Location: users.php");
-    exit;
+    $user_id = (int) ($_POST['user_id'] ?? 0);
+    $password = $_POST['password'] ?? '';
+    $errors = [];
+
+    if ($user_id <= 0) {
+        $errors[] = "Invalid user ID.";
+    }
+    if (strlen($password) < 8) {
+        $errors[] = "Password must be at least 8 characters long.";
+    }
+
+    if (empty($errors)) {
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $conn->prepare("UPDATE users SET password=? WHERE user_id=?");
+        $stmt->bind_param("si", $hash, $user_id);
+        $stmt->execute();
+        header("Location: users.php");
+        exit;
+    } else {
+        foreach ($errors as $error) {
+            echo "<div class='text-red-500 mb-2'>$error</div>";
+        }
+    }
 }
 
 if (isset($_POST['update_role'])) {
-    $stmt = $conn->prepare("UPDATE users SET role=? WHERE user_id=?");
-    $stmt->bind_param("si", $_POST['role'], $_POST['user_id']);
-    $stmt->execute();
-    header("Location: users.php");
-    exit;
+    $user_id = (int) ($_POST['user_id'] ?? 0);
+    $role = sanitize($_POST['role'] ?? '');
+    $errors = [];
+
+    if ($user_id <= 0) {
+        $errors[] = "Invalid user ID.";
+    }
+    if (!in_array($role, ['USER', 'ADMIN'])) {
+        $errors[] = "Invalid role.";
+    }
+
+    if (empty($errors)) {
+        $stmt = $conn->prepare("UPDATE users SET role=? WHERE user_id=?");
+        $stmt->bind_param("si", $role, $user_id);
+        $stmt->execute();
+        header("Location: users.php");
+        exit;
+    } else {
+        foreach ($errors as $error) {
+            echo "<div class='text-red-500 mb-2'>$error</div>";
+        }
+    }
 }
 
 if (isset($_POST['delete_user'])) {
-    $stmt = $conn->prepare("DELETE FROM users WHERE user_id=? AND role!='ADMIN'");
-    $stmt->bind_param("i", $_POST['user_id']);
-    $stmt->execute();
-    header("Location: users.php");
-    exit;
+    $user_id = (int) ($_POST['user_id'] ?? 0);
+    $errors = [];
+
+    if ($user_id <= 0) {
+        $errors[] = "Invalid user ID.";
+    }
+
+    if (empty($errors)) {
+        $stmt = $conn->prepare("DELETE FROM users WHERE user_id=? AND role!='ADMIN'");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        header("Location: users.php");
+        exit;
+    } else {
+        foreach ($errors as $error) {
+            echo "<div class='text-red-500 mb-2'>$error</div>";
+        }
+    }
 }
 
 if (isset($_POST['create_admin'])) {
-    $hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
-    $stmt = $conn->prepare("INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, 'ADMIN')");
-    $stmt->bind_param("sss", $_POST['username'], $_POST['email'], $hash);
-    $stmt->execute();
-    header("Location: users.php");
-    exit;
-}
+    $username = sanitize($_POST['username'] ?? '');
+    $email = filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL);
+    $password = $_POST['password'] ?? '';
+    $errors = [];
 
+    if (strlen($username) < 3 || strlen($username) > 50 || !preg_match('/^[a-zA-Z0-9_]+$/', $username)) {
+        $errors[] = "Invalid username. Must be 3-50 characters and only letters, numbers, underscores.";
+    }
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = "Invalid email address.";
+    }
+    if (strlen($password) < 8) {
+        $errors[] = "Password must be at least 8 characters long.";
+    }
+
+    if (empty($errors)) {
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $conn->prepare("INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, 'ADMIN')");
+        $stmt->bind_param("sss", $username, $email, $hash);
+        $stmt->execute();
+        header("Location: users.php");
+        exit;
+    } else {
+        foreach ($errors as $error) {
+            echo "<div class='text-red-500 mb-2'>$error</div>";
+        }
+    }
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -115,7 +186,7 @@ if (isset($_POST['create_admin'])) {
                 <!-- Right Icons -->
                 <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
                     <el-dropdown class="relative ml-3">
-                        <div 
+                        <div
                             class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
                             <span class="sr-only">Open user menu</span>
                             <img src="../../src/img/setting.png" alt="User Avatar" class="size-10 rounded-full" />
@@ -157,6 +228,15 @@ if (isset($_POST['create_admin'])) {
             <!-- Users Tab -->
             <div id="users" class="tab-content  mb-4">
                 <h2 class="text-xl font-semibold mb-4">Manage Users</h2>
+                <?php if (!empty($errors)): ?>
+                    <div class="mb-4 p-2 border border-red-500 bg-red-100 text-red-700 rounded">
+                        <ul class="list-disc list-inside">
+                            <?php foreach ($errors as $err): ?>
+                                <li><?= htmlspecialchars($err) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
                 <h3 class="text-lg font-semibold mb-2">Create Admin</h3>
                 <form method="POST" class="flex space-x-2 mb-6">
                     <input type="text" name="username" placeholder="Username" required class="border px-2 py-1 rounded">
@@ -232,7 +312,7 @@ if (isset($_POST['create_admin'])) {
             </div>
         </div>
     </div>
-   <footer class="z-20 w-full bg-blue-200 place-self-end mt-auto">
+    <footer class="z-20 w-full bg-blue-200 place-self-end mt-auto">
         <div class="mx-10 px-2 sm:px-6 lg:px-8">
             <div class="relative flex h-16 items-center justify-between">
                 <span

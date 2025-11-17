@@ -26,35 +26,76 @@ $totalgenres = $conn->query("SELECT COUNT(*) as total FROM genres")->fetch_assoc
 $totalgenresPages = max(ceil($totalgenres / $genresPerPage), 1);
 $genres = $conn->query("SELECT * FROM genres ORDER BY genre_id ASC");
 
+function sanitize($input)
+{
+    return htmlspecialchars(trim($input));
+}
+
 if (isset($_POST['update_genre'])) {
-    $stmt = $conn->prepare("UPDATE genres SET name=? WHERE genre_id=?");
-    $stmt->bind_param("si", $_POST['name'], $_POST['genre_id']);
-    $stmt->execute();
-    header("Location: genres.php");
-    exit;
+    $genre_id = (int) ($_POST['genre_id'] ?? 0);
+    $name = sanitize($_POST['name'] ?? '');
+    if (!preg_match('/^[a-zA-Z\s\-]{1,50}$/', $name)) {
+        $errors[] = "Genre must be 1-50 characters and contain only letters, spaces, or dashes.";
+    }
+    $errors = [];
+
+    if ($genre_id <= 0) {
+        $errors[] = "Invalid genre ID.";
+    }
+    if ($name === '' || strlen($name) > 255) {
+        $errors[] = "Genre name is required and must be max 255 characters.";
+    }
+
+    if (empty($errors)) {
+        $stmt = $conn->prepare("UPDATE genres SET name=? WHERE genre_id=?");
+        $stmt->bind_param("si", $name, $genre_id);
+        $stmt->execute();
+        header("Location: genres.php");
+        exit;
+    }
 }
 
 if (isset($_POST['delete_genre'])) {
-    $genre_id = $_POST['genre_id'];
-    $check = $conn->prepare("SELECT COUNT(*) as cnt FROM books WHERE genre_id=?");
-    $check->bind_param("i", $genre_id);
-    $check->execute();
-    $cnt = $check->get_result()->fetch_assoc()['cnt'];
-    if ($cnt == 0) {
-        $stmt = $conn->prepare("DELETE FROM genres WHERE genre_id=?");
-        $stmt->bind_param("i", $genre_id);
-        $stmt->execute();
+    $genre_id = (int) ($_POST['genre_id'] ?? 0);
+    $errors = [];
+
+    if ($genre_id <= 0) {
+        $errors[] = "Invalid genre ID.";
+    }
+
+    if (empty($errors)) {
+        $check = $conn->prepare("SELECT COUNT(*) as cnt FROM books WHERE genre_id=?");
+        $check->bind_param("i", $genre_id);
+        $check->execute();
+        $cnt = $check->get_result()->fetch_assoc()['cnt'];
+        if ($cnt == 0) {
+            $stmt = $conn->prepare("DELETE FROM genres WHERE genre_id=?");
+            $stmt->bind_param("i", $genre_id);
+            $stmt->execute();
+        } 
     }
     header("Location: genres.php");
     exit;
 }
 
 if (isset($_POST['create_genre'])) {
-    $stmt = $conn->prepare("INSERT INTO genres (name) VALUES (?)");
-    $stmt->bind_param("s", $_POST['name']);
-    $stmt->execute();
-    header("Location: genres.php");
-    exit;
+    $name = sanitize($_POST['name'] ?? '');
+    $errors = [];
+    $name = sanitize($_POST['name'] ?? '');
+    if (!preg_match('/^[a-zA-Z\s\-]{1,50}$/', $name)) {
+        $errors[] = "Genre must be 1-50 characters and contain only letters, spaces, or dashes.";
+    }
+    if ($name === '' || strlen($name) > 255) {
+        $errors[] = "Genre name is required and must be max 255 characters.";
+    }
+
+    if (empty($errors)) {
+        $stmt = $conn->prepare("INSERT INTO genres (name) VALUES (?)");
+        $stmt->bind_param("s", $name);
+        $stmt->execute();
+        header("Location: genres.php");
+        exit;
+    }
 }
 ?>
 <!doctype html>
@@ -156,6 +197,15 @@ if (isset($_POST['create_genre'])) {
             <!-- Genres Tab -->
             <div id="genres" class="tab-content  mb-4">
                 <h2 class="text-xl font-semibold mb-4">Manage Genres</h2>
+                <?php if (!empty($errors)): ?>
+                    <div class="mb-4 p-2 border border-red-500 bg-red-100 text-red-700 rounded">
+                        <ul class="list-disc list-inside">
+                            <?php foreach ($errors as $err): ?>
+                                <li><?= htmlspecialchars($err) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
                 <h3 class="text-lg font-semibold mb-4">Add Genre</h3>
                 <form method="POST" class="flex space-x-2 mb-2">
                     <input type="text" name="name" placeholder="New Genre" required class="border px-2 py-1 rounded">
@@ -183,8 +233,9 @@ if (isset($_POST['create_genre'])) {
                                     </form>
                                 </td>
                                 <td class="px-4 py-2">
-                                    <form method="POST" class="flex space-x-2"><button type="submit" name="delete_genre"
-                                            class="bg-red-500 text-white px-2 rounded"
+                                    <form method="POST" class="flex space-x-2">
+                                        <input type="hidden" name="genre_id" value="<?= $row['genre_id'] ?>">
+                                        <button type="submit" name="delete_genre" class="bg-red-500 text-white px-2 rounded"
                                             onclick="return confirm('Delete genre?')">Delete</button>
                                     </form>
                                 </td>
@@ -219,7 +270,7 @@ if (isset($_POST['create_genre'])) {
 
         </div>
     </div>
-   <footer class="z-20 w-full bg-blue-200 place-self-end mt-auto">
+    <footer class="z-20 w-full bg-blue-200 place-self-end mt-auto">
         <div class="mx-10 px-2 sm:px-6 lg:px-8">
             <div class="relative flex h-16 items-center justify-between">
                 <span

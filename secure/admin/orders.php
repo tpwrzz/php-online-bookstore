@@ -192,6 +192,15 @@ if (isset($_POST['delete_order'])) {
             <!-- Orders Tab -->
             <div id="orders" class="tab-content">
                 <h2 class="text-xl font-semibold mb-4">Manage Orders</h2>
+                <?php if (!empty($errors)): ?>
+                    <div class="mb-4 p-2 border border-red-500 bg-red-100 text-red-700 rounded">
+                        <ul class="list-disc list-inside">
+                            <?php foreach ($errors as $err): ?>
+                                <li><?= htmlspecialchars($err) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
                 <table class="min-w-full bg-white border mb-6">
                     <thead class="bg-gray-100 border-b">
                         <tr>
@@ -206,7 +215,8 @@ if (isset($_POST['delete_order'])) {
                     <tbody>
                         <?php while ($row = $orders->fetch_assoc()): ?>
                             <tr class="border-b hover:bg-gray-50 ">
-                                <td class="px-4 py-2 font-semibold text-blue-700 underline cursor-pointer"  onclick="window.location='view-order.php?id=<?= $row['order_id'] ?>'">
+                                <td class="px-4 py-2 font-semibold text-blue-700 underline cursor-pointer"
+                                    onclick="window.location='view-order.php?id=<?= $row['order_id'] ?>'">
                                     #<?= $row['order_id'] ?>
                                 </td>
                                 <td class="px-4 py-2"><?= htmlspecialchars($row['username']) ?></td>

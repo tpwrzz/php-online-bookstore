@@ -40,15 +40,35 @@ $errors = [];
 $success = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Trim and sanitize inputs
     $full_name = trim($_POST['full_name'] ?? '');
     $address = trim($_POST['address'] ?? '');
-    $email = trim($_POST['email'] ?? '');
+    $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
 
+    // VALIDATION
     if (!$full_name || !$address || !$email) {
-        $errors[] = "All fields are required";
-    } elseif (empty($cartItems)) {
-        $errors[] = "Your cart is empty";
-    } else {
+        $errors[] = "All fields are required.";
+    }
+
+    // Optional stricter validation
+    if (!preg_match('/^[a-zA-Z\s\-]{3,100}$/', $full_name)) {
+        $errors[] = "Full name must be 3-100 characters, letters, spaces, or dashes only.";
+    }
+
+    if (strlen($address) < 5 || strlen($address) > 255) {
+        $errors[] = "Address must be between 5 and 255 characters.";
+    }
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = "Invalid email address.";
+    }
+
+    if (empty($cartItems)) {
+        $errors[] = "Your cart is empty.";
+    }
+
+    // Proceed if no errors
+    if (empty($errors)) {
         $conn->begin_transaction();
 
         try {
@@ -70,11 +90,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
 
             foreach ($booksInCart as $book_id => $qty) {
+                // Ensure quantity is a positive integer
+                $book_id = (int) $book_id;
+                $qty = (int) $qty;
+                if ($qty <= 0) {
+                    throw new Exception("Invalid quantity for book ID $book_id");
+                }
+
+                // Get the price from cart items
+                $price = 0;
                 foreach ($cartItems as $item) {
                     if ($item['title'] == $item['title']) {
                         $price = $item['price'];
                     }
                 }
+
                 $stmtItem->bind_param("iiid", $order_id, $book_id, $qty, $price);
                 $stmtItem->execute();
 
@@ -85,8 +115,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new Exception("Not enough stock for book ID $book_id");
                 }
             }
-            $conn->commit();
 
+            $conn->commit();
             $success = true;
             unset($_SESSION['cart']);
 
@@ -96,9 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -166,7 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </a>
                     </button>
                     <el-dropdown class="relative ml-3">
-                       <a href='<?= isset($_SESSION['user_id']) ? "../secure/user/myinfo.php" : "public/auth.php" ?>'
+                        <a href='<?= isset($_SESSION['user_id']) ? "../secure/user/myinfo.php" : "auth.php" ?>'
                             class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
                             <span class="sr-only">Open user menu</span>
                             <img src="<?= isset($_SESSION['user_id']) ? '../src/img/avatar.png' : '../src/img/login.png' ?>"
@@ -285,7 +313,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
         </div>
     </main>
-   <footer class="z-20 w-full bg-blue-200 place-self-end mt-auto">
+    <footer class="z-20 w-full bg-blue-200 place-self-end mt-auto">
         <div class="mx-10 px-2 sm:px-6 lg:px-8">
             <div class="relative flex h-16 items-center justify-between">
                 <span

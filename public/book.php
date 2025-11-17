@@ -9,7 +9,11 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 
 $bookId = intval($_GET['id']);
 
-$stmt = $conn->prepare("SELECT title, description, price, cover_img, CONCAT(authors.first_name, ' ', authors.last_name) AS author_name, genres.name AS genre_name, books.author_id, books.genre_id FROM books JOIN authors ON books.author_id = authors.author_id JOIN genres ON books.genre_id = genres.genre_id WHERE books.book_id = ? LIMIT 1");
+$stmt = $conn->prepare("SELECT title, description, published_at, 
+stock_qty, price, cover_img, CONCAT(authors.first_name, ' ', authors.last_name) 
+AS author_name, genres.name AS genre_name, books.author_id, books.genre_id 
+FROM books JOIN authors ON books.author_id = authors.author_id 
+JOIN genres ON books.genre_id = genres.genre_id WHERE books.book_id = ? LIMIT 1");
 $stmt->bind_param("i", $bookId);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -30,6 +34,8 @@ $stmt2 = $conn->prepare("
     SELECT 
         books.book_id,
         books.title,
+        books.published_at,
+        books.stock_qty,
         books.price,
         books.cover_img,
         CONCAT(authors.first_name, ' ', authors.last_name) AS author_name
@@ -51,7 +57,6 @@ if ($similarResult && $similarResult->num_rows > 0) {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -105,7 +110,6 @@ if ($similarResult && $similarResult->num_rows > 0) {
                 <!-- Right Icons -->
                 <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
                     <?php
-
                     $cartCount = isset($_SESSION['cart']) ? count($_SESSION['cart']) : 0;
                     ?>
                     <a href="cart.php" class="relative">
@@ -119,7 +123,7 @@ if ($similarResult && $similarResult->num_rows > 0) {
                     </a>
                     </button>
                     <el-dropdown class="relative ml-3">
-                        <a href='<?= isset($_SESSION['user_id']) ? "../secure/user/myinfo.php" : "public/auth.php" ?>'
+                        <a href='<?= isset($_SESSION['user_id']) ? "../secure/user/myinfo.php" : "auth.php" ?>'
                             class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
                             <span class="sr-only">Open user menu</span>
                             <img src="<?= isset($_SESSION['user_id']) ? '../src/img/avatar.png' : '../src/img/login.png' ?>"
@@ -189,41 +193,52 @@ if ($similarResult && $similarResult->num_rows > 0) {
                     <h1 class="text-3xl font-bold mb-3"><?= htmlspecialchars($book['title']) ?></h1>
                     <p class="mb-1"><strong>Author:</strong> <?= htmlspecialchars($book['author_name']) ?></p>
                     <p class="mb-1"><strong>Genre:</strong> <?= htmlspecialchars($book['genre_name']) ?></p>
+                    <p class="mb-1">
+                        <strong>Published:</strong><?= htmlspecialchars($book['published_at'], 2) ?>
+                    </p>
                     <p class="text-[#618792] font-bold text-2xl mt-3 mb-5"><?= number_format($book['price'], 2) ?> €</p>
                     <hr class="border-[#618792]/50 my-4">
                     <p class="leading-relaxed"><?= nl2br(htmlspecialchars($book['description'])) ?></p>
                 </div>
+                <?php if ($book['stock_qty'] == 0): ?>
+                    <div
+                        class="text-center w-full md:w-48 bg-[#618792]/90 text-white py-3 rounded-xl font-semibold hover:bg-[#618792] hover:shadow-lg transition">
+                        Not Available</div>
+                <?php else: ?>
+                    <!-- Add to Cart Button -->
+                    <form action="../src/scripts/add-to-cart.php" method="POST"
+                        class="mt-6 md:mt-10 flex items-center gap-4">
+                        <input type="hidden" name="book_id" value="<?= $bookId ?>">
+                        <!-- Counter -->
+                        <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden h-12">
+                            <button type="button" id="decrement-button" data-input-counter-decrement="quantity-input"
+                                class="bg-[#f8fafc] dark:bg-[#f8fafc] dark:hover:bg-[#f8fafc] hover:bg-[#f8fafc]  rounded-s-lg p-3 h-11 focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none">
+                                <svg class="w-3 h-3 text-[#618792]/90 dark:text-[#618792]/90" aria-hidden="true"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 2">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="2" d="M1 1h16" />
+                                </svg></button>
+                            <input type="number" name="quantity" id="quantity-input" value="1" min="1"
+                                max="<?= htmlspecialchars($book['stock_qty'], 2) ?>"
+                                class="w-20 text-center border-none focus:ring-0 focus:outline-none text-[#618792]/90 font-medium">
+                            <button type="button" id="increment-button" data-input-counter-increment="quantity-input"
+                                class="bg-[#f8fafc] dark:bg-[#f8fafc] dark:hover:bg-[#f8fafc]  hover:bg-[#618792]/90  rounded-e-lg p-3 h-11 focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none">
+                                <svg class="w-3 h-3 text-[#618792]/90 dark:text-[#618792]/90" aria-hidden="true"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="2" d="M9 1v16M1 9h16" />
+                                </svg></button>
+                        </div>
 
-                <!-- Add to Cart Button -->
-                <form action="../src/scripts/add-to-cart.php" method="POST"
-                    class="mt-6 md:mt-10 flex items-center gap-4">
-                    <input type="hidden" name="book_id" value="<?= $bookId ?>">
-                    <!-- Counter -->
-                    <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden h-12">
-                        <button type="button" id="decrement-button" data-input-counter-decrement="quantity-input"
-                            class="bg-[#f8fafc] dark:bg-[#f8fafc] dark:hover:bg-[#f8fafc] hover:bg-[#f8fafc]  rounded-s-lg p-3 h-11 focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none">
-                            <svg class="w-3 h-3 text-[#618792]/90 dark:text-[#618792]/90" aria-hidden="true"
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 2">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                    stroke-width="2" d="M1 1h16" />
-                            </svg></button>
-                        <input type="number" name="quantity" id="quantity-input" value="1" min="1"
-                            class="w-20 text-center border-none focus:ring-0 focus:outline-none text-[#618792]/90 font-medium">
-                        <button type="button" id="increment-button" data-input-counter-increment="quantity-input"
-                            class="bg-[#f8fafc] dark:bg-[#f8fafc] dark:hover:bg-[#f8fafc]  hover:bg-[#618792]/90  rounded-e-lg p-3 h-11 focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none">
-                            <svg class="w-3 h-3 text-[#618792]/90 dark:text-[#618792]/90" aria-hidden="true"
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                    stroke-width="2" d="M9 1v16M1 9h16" />
-                            </svg></button>
-                    </div>
+                        <!-- Add to cart button -->
 
-                    <!-- Add to cart button -->
-                    <button type="submit"
-                        class="w-full md:w-48 bg-[#618792]/90 text-white py-3 rounded-xl font-semibold hover:bg-[#618792] hover:shadow-lg transition">
-                        Add to Cart
-                    </button>
-                </form>
+                        <button type="submit"
+                            class="w-full md:w-48 bg-[#618792]/90 text-white py-3 rounded-xl font-semibold hover:bg-[#618792] hover:shadow-lg transition">
+                            Add to Cart
+                        </button>
+
+                    </form>
+                <?php endif; ?>
             </div>
 
         </div>
@@ -336,18 +351,30 @@ if ($similarResult && $similarResult->num_rows > 0) {
         });
     });
     document.addEventListener("DOMContentLoaded", () => {
-        const decrement = document.getElementById("decrement-button");
-        const increment = document.getElementById("increment-button");
-        const input = document.getElementById("quantity-input");
+        const decrementButton = document.getElementById('decrement-button');
+        const incrementButton = document.getElementById('increment-button');
+        const quantityInput = document.getElementById('quantity-input');
 
-        decrement.addEventListener("click", () => {
-            let val = parseInt(input.value) || 1;
-            if (val > 1) input.value = val - 1;
+        const min = parseInt(quantityInput.min) || 1;
+        const max = parseInt(quantityInput.max) || 999;
+
+        decrementButton.addEventListener('click', () => {
+            let value = parseInt(quantityInput.value) || min;
+            if (value > min) {
+                quantityInput.value = value - 1;
+            }
         });
 
-        increment.addEventListener("click", () => {
-            let val = parseInt(input.value) || 1;
-            input.value = val + 1;
+        incrementButton.addEventListener('click', () => {
+            let value = parseInt(quantityInput.value) || min;
+            if (value < max) {
+                quantityInput.value = value + 1;
+            }
+        });
+        quantityInput.addEventListener('input', () => {
+            let value = parseInt(quantityInput.value) || min;
+            if (value < min) quantityInput.value = min;
+            if (value > max) quantityInput.value = max;
         });
     });
 </script>

@@ -30,33 +30,68 @@ $stmt->bind_param("ii", $authorsOffset, $authorsPerPage);
 $stmt->execute();
 $authors = $stmt->get_result();
 
-
 if (isset($_POST['create_author'])) {
-    $stmt = $conn->prepare("INSERT INTO authors (first_name, last_name) VALUES (?, ?)");
-    $stmt->bind_param("ss", $_POST['first_name'], $_POST['last_name']);
-    $stmt->execute();
-    header("Location: authors.php");
-    exit;
+    $first_name = trim($_POST['first_name'] ?? '');
+    $last_name = trim($_POST['last_name'] ?? '');
+
+    $errors = [];
+
+    // Validate names: letters, spaces, dashes, 1-50 chars
+    if (!preg_match('/^[a-zA-Z\s\-]{1,50}$/', $first_name)) {
+        $errors[] = "First name must be 1-50 characters and contain only letters, spaces, or dashes.";
+    }
+    if (!preg_match('/^[a-zA-Z\s\-]{1,50}$/', $last_name)) {
+        $errors[] = "Last name must be 1-50 characters and contain only letters, spaces, or dashes.";
+    }
+
+    if (empty($errors)) {
+        $stmt = $conn->prepare("INSERT INTO authors (first_name, last_name) VALUES (?, ?)");
+        $stmt->bind_param("ss", $first_name, $last_name);
+        $stmt->execute();
+        header("Location: authors.php");
+        exit;
+    }
 }
+
 if (isset($_POST['update_author'])) {
-    $stmt = $conn->prepare("UPDATE authors SET first_name=?, last_name=? WHERE author_id=?");
-    $stmt->bind_param("ssi", $_POST['first_name'], $_POST['last_name'], $_POST['author_id']);
-    $stmt->execute();
-    header("Location: authors.php");
-    exit;
+    $author_id = (int) ($_POST['author_id'] ?? 0);
+    $first_name = trim($_POST['first_name'] ?? '');
+    $last_name = trim($_POST['last_name'] ?? '');
+
+    $errors = [];
+
+    if ($author_id <= 0) {
+        $errors[] = "Invalid author ID.";
+    }
+    if (!preg_match('/^[a-zA-Z\s\-]{1,50}$/', $first_name)) {
+        $errors[] = "First name must be 1-50 characters and contain only letters, spaces, or dashes.";
+    }
+    if (!preg_match('/^[a-zA-Z\s\-]{1,50}$/', $last_name)) {
+        $errors[] = "Last name must be 1-50 characters and contain only letters, spaces, or dashes.";
+    }
+
+    if (empty($errors)) {
+        $stmt = $conn->prepare("UPDATE authors SET first_name=?, last_name=? WHERE author_id=?");
+        $stmt->bind_param("ssi", $first_name, $last_name, $author_id);
+        $stmt->execute();
+        header("Location: authors.php");
+        exit;
+    }
 }
 
 if (isset($_POST['delete_author'])) {
-    $author_id = $_POST['author_id'];
-    $check = $conn->prepare("SELECT COUNT(*) as cnt FROM books WHERE author_id=?");
-    $check->bind_param("i", $author_id);
-    $check->execute();
-    $cnt = $check->get_result()->fetch_assoc()['cnt'];
+    $author_id = (int) ($_POST['author_id'] ?? 0);
+    if ($author_id > 0) {
+        $check = $conn->prepare("SELECT COUNT(*) as cnt FROM books WHERE author_id=?");
+        $check->bind_param("i", $author_id);
+        $check->execute();
+        $cnt = $check->get_result()->fetch_assoc()['cnt'];
 
-    if ($cnt == 0) {
-        $stmt = $conn->prepare("DELETE FROM authors WHERE author_id=?");
-        $stmt->bind_param("i", $author_id);
-        $stmt->execute();
+        if ($cnt == 0) {
+            $stmt = $conn->prepare("DELETE FROM authors WHERE author_id=?");
+            $stmt->bind_param("i", $author_id);
+            $stmt->execute();
+        }
     }
     header("Location: authors.php");
     exit;
@@ -92,11 +127,11 @@ if (isset($_POST['delete_author'])) {
                     </div>
                 </div>
                 <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-                    <div 
-                            class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
-                            <span class="sr-only">Open user menu</span>
-                            <img src="../../src/img/setting.png" alt="User Avatar" class="size-10 rounded-full" />
-                        </div>
+                    <div
+                        class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
+                        <span class="sr-only">Open user menu</span>
+                        <img src="../../src/img/setting.png" alt="User Avatar" class="size-10 rounded-full" />
+                    </div>
                 </div>
             </div>
         </div>
@@ -130,6 +165,15 @@ if (isset($_POST['delete_author'])) {
         <!-- AUTHORS -->
         <div id="authors" class="tab-content mb-4">
             <h2 class="text-xl font-semibold mb-4">Manage Authors</h2>
+            <?php if (!empty($errors)): ?>
+                <div class="mb-4 p-2 border border-red-500 bg-red-100 text-red-700 rounded">
+                    <ul class="list-disc list-inside">
+                        <?php foreach ($errors as $err): ?>
+                            <li><?= htmlspecialchars($err) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
             <h3 class="text-lg font-semibold mb-4">Add Author</h3>
 
             <!-- Create form -->
@@ -203,7 +247,7 @@ if (isset($_POST['delete_author'])) {
         </div>
     </div>
 
-   <footer class="z-20 w-full bg-blue-200 place-self-end mt-auto">
+    <footer class="z-20 w-full bg-blue-200 place-self-end mt-auto">
         <div class="mx-10 px-2 sm:px-6 lg:px-8">
             <div class="relative flex h-16 items-center justify-between">
                 <span
