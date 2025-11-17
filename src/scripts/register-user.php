@@ -1,9 +1,9 @@
 <?php
 session_start();
-include('../src/scripts/db-connect.php'); // adjust path if needed
+include('../src/scripts/db-connect.php'); 
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $username = trim($_POST['fullname']);  // using "fullname" from the form
+    $username = trim($_POST['fullname']);  
     $email = trim($_POST['email']);
     $password = $_POST['password'];
 
@@ -24,10 +24,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $check->close();
 
-    // hash the password
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-    // insert new user
     $stmt = $conn->prepare("INSERT INTO users (username, password_hash, role, email, created_at) VALUES (?, ?, 'USER', ?, NOW())");
     $stmt->bind_param("sss", $username, $password_hash, $email);
 

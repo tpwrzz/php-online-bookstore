@@ -7,7 +7,6 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Check if user is admin
 $user_id = $_SESSION['user_id'];
 $stmt = $conn->prepare("SELECT role FROM users WHERE user_id = ?");
 $stmt->bind_param("i", $user_id);
@@ -18,18 +17,15 @@ if ($role !== 'ADMIN') {
     die("Access denied");
 }
 
-
 // ---------------- USERS ----------------
 $usersPerPage = 12;
 $currentusersPage = isset($_GET['users_page']) && is_numeric($_GET['users_page']) ? (int) $_GET['users_page'] : 1;
 $usersOffset = ($currentusersPage - 1) * $usersPerPage;
 
-// Total orders count
 $totalusers = $conn->query("SELECT COUNT(*) as total FROM users")->fetch_assoc()['total'];
 $totalusersPages = max(ceil($totalusers / $usersPerPage), 1);
 $users = $conn->query("SELECT user_id, username, email, role, created_at FROM users ORDER BY user_id ASC");
 
-// Update user password
 if (isset($_POST['update_password'])) {
     $hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
     $stmt = $conn->prepare("UPDATE users SET password=? WHERE user_id=?");
@@ -39,7 +35,6 @@ if (isset($_POST['update_password'])) {
     exit;
 }
 
-// Update role
 if (isset($_POST['update_role'])) {
     $stmt = $conn->prepare("UPDATE users SET role=? WHERE user_id=?");
     $stmt->bind_param("si", $_POST['role'], $_POST['user_id']);
@@ -48,7 +43,6 @@ if (isset($_POST['update_role'])) {
     exit;
 }
 
-// Delete user
 if (isset($_POST['delete_user'])) {
     $stmt = $conn->prepare("DELETE FROM users WHERE user_id=? AND role!='ADMIN'");
     $stmt->bind_param("i", $_POST['user_id']);
@@ -57,7 +51,6 @@ if (isset($_POST['delete_user'])) {
     exit;
 }
 
-// Create admin
 if (isset($_POST['create_admin'])) {
     $hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
     $stmt = $conn->prepare("INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, 'ADMIN')");

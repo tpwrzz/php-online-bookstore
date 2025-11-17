@@ -20,8 +20,6 @@ if ($result && $result->num_rows > 0) {
 } else {
     die("Book not found.");
 }
-
-// Similar books query
 $priceLower = $book['price'] - 2;
 $priceUpper = $book['price'] + 2;
 

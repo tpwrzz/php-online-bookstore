@@ -2,7 +2,6 @@
 session_start();
 include('../src/scripts/db-connect.php');
 
-// проверка логина
 if (!isset($_SESSION['user_id'])) {
     header('Location: auth.php');
     exit;
@@ -50,11 +49,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (empty($cartItems)) {
         $errors[] = "Your cart is empty";
     } else {
-        // Start transaction
         $conn->begin_transaction();
 
         try {
-            // INSERT ORDER
             $stmt = $conn->prepare("
                 INSERT INTO orders (user_id, full_name, address, total_price, status, created_at)
                 VALUES (?, ?, ?, ?, 'Pending', NOW())
@@ -63,8 +60,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute();
 
             $order_id = $stmt->insert_id;
-
-            // INSERT ORDER ITEMS + UPDATE STOCK
             $stmtItem = $conn->prepare("
                 INSERT INTO order_items (order_id, book_id, quantity, price_each)
                 VALUES (?, ?, ?, ?)
@@ -75,18 +70,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
 
             foreach ($booksInCart as $book_id => $qty) {
-                // Find price
                 foreach ($cartItems as $item) {
                     if ($item['title'] == $item['title']) {
                         $price = $item['price'];
                     }
                 }
-
-                // Insert order item
                 $stmtItem->bind_param("iiid", $order_id, $book_id, $qty, $price);
                 $stmtItem->execute();
 
-                // Update stock (ensure no negative stock)
                 $stmtStock->bind_param("iii", $qty, $book_id, $qty);
                 $stmtStock->execute();
 
@@ -94,8 +85,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new Exception("Not enough stock for book ID $book_id");
                 }
             }
-
-            // All good → commit
             $conn->commit();
 
             $success = true;

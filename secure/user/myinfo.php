@@ -16,19 +16,19 @@ $role = $stmt->get_result()->fetch_assoc()['role'];
 if ($role == 'ADMIN') {
      header("Location: ../admin/admin.php");
 } 
-// Get user info
+
 $user_sql = "SELECT username, email, role, created_at FROM users WHERE user_id = ?";
 $stmt = $conn->prepare($user_sql);
 $stmt->bind_param('i', $user_id);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
 
-// Pagination setup
+
 $itemsPerPage = 10;
 $currentPage = isset($_GET['page']) && is_numeric($_GET['page']) ? (int) $_GET['page'] : 1;
 $offset = ($currentPage - 1) * $itemsPerPage;
 
-// Count total orders
+
 $count_sql = "SELECT COUNT(*) AS total FROM orders WHERE user_id = ?";
 $stmt = $conn->prepare($count_sql);
 $stmt->bind_param('i', $user_id);

@@ -7,7 +7,6 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Check if user is admin
 $user_id = $_SESSION['user_id'];
 $stmt = $conn->prepare("SELECT role FROM users WHERE user_id = ?");
 $stmt->bind_param("i", $user_id);
@@ -19,7 +18,6 @@ if ($role !== 'ADMIN') {
 }
 
 // ---------------- BOOKS ----------------
-// --- Pagination ---
 $booksPerPage = 10;
 $currentbooksPage = isset($_GET['books_page']) && is_numeric($_GET['books_page']) ? (int) $_GET['books_page'] : 1;
 $booksOffset = ($currentbooksPage - 1) * $booksPerPage;
@@ -27,9 +25,6 @@ $booksOffset = ($currentbooksPage - 1) * $booksPerPage;
 $totalBooks = $conn->query("SELECT COUNT(*) as total FROM books")->fetch_assoc()['total'];
 $totalbooksPages = max(ceil($totalBooks / $booksPerPage), 1);
 
-// --- CRUD actions ---
-
-// ✅ CREATE Book
 if (isset($_POST['create_book'])) {
     $title = $_POST['title'];
     $author_id = $_POST['author_id'];
@@ -37,7 +32,6 @@ if (isset($_POST['create_book'])) {
     $price = $_POST['price'];
     $stock_qty = $_POST['stock_qty'];
 
-    // Handle cover upload
     $coverFileName = null;
     if (!empty($_FILES['cover_image']['name'])) {
         $coverFileName = basename($_FILES['cover_image']['name']);
@@ -57,8 +51,6 @@ if (isset($_POST['create_book'])) {
     exit;
 }
 
-
-// ✅ UPDATE Book
 if (isset($_POST['update_book'])) {
     $book_id = $_POST['book_id'];
     $title = $_POST['title'];
@@ -67,7 +59,6 @@ if (isset($_POST['update_book'])) {
     $genre_id = $_POST['genre_id'];
     $author_id = $_POST['author_id'];
 
-    // Handle cover upload if provided
     $coverFileName = null;
     if (!empty($_FILES['cover_image']['name'])) {
         $coverFileName = basename($_FILES["cover_image"]["name"]);
@@ -75,9 +66,7 @@ if (isset($_POST['update_book'])) {
         $targetPath = getcwd() . "/src/img/covers/" . $coverFileName;
         $targetFile = $targetPath . $coverFileName;
 
-        // Move uploaded file
         if (move_uploaded_file($_FILES["cover_image"]["tmp_name"], $targetFile)) {
-            // ✅ Save just the file name in DB
             $stmt = $conn->prepare("
                 UPDATE books 
                 SET title=?, price=?, stock_qty=?, genre_id=?, author_id=?, cover_img=?
@@ -88,7 +77,6 @@ if (isset($_POST['update_book'])) {
             echo "<div class='text-red-600 text-center mb-2'>❌ Image upload failed.</div>";
         }
     } else {
-        // Update without changing the image
         $stmt = $conn->prepare("
             UPDATE books 
             SET title=?, price=?, stock_qty=?, genre_id=?, author_id=?
@@ -103,11 +91,9 @@ if (isset($_POST['update_book'])) {
     exit;
 }
 
-// ✅ DELETE Book (only if all orders with this book are completed or cancelled)
 if (isset($_POST['delete_book'])) {
     $book_id = $_POST['book_id'];
 
-    // Check if the book is linked to any order that is NOT completed or cancelled
     $check = $conn->prepare("
         SELECT COUNT(*) AS cnt
         FROM order_items oi
@@ -119,15 +105,12 @@ if (isset($_POST['delete_book'])) {
     $cnt = $check->get_result()->fetch_assoc()['cnt'];
 
     if ($cnt == 0) {
-        // ✅ Safe to delete (all related orders are completed or cancelled)
         $stmt = $conn->prepare("DELETE FROM books WHERE book_id = ?");
         $stmt->bind_param("i", $book_id);
         $stmt->execute();
 
-        // Optional: also delete orphaned order_items entries if any (historical cleanup)
         $conn->query("DELETE FROM order_items WHERE book_id = $book_id");
     } else {
-        // ❌ There are active (non-completed) orders for this book
         echo "<div class='text-red-600 text-center mb-4'>
                 ❌ Cannot delete: this book is in an active order.
               </div>";

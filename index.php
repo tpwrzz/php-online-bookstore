@@ -17,18 +17,15 @@ $isLoggedIn = isset($_SESSION['user_id']); ?>
     <nav class="relative bg-gray-800 dark:bg-blue-200">
         <div class="mx-20 max-w-full sm:px-6 lg:px-8">
             <div class="relative flex h-20 items-center justify-center-safe">
-                <!-- Mobile menu button -->
                 <div class="absolute inset-y-0 left-0 flex items-center sm:hidden">
                     <button id="hamburger-btn" type="button"
                         class="relative inline-flex items-center justify-center rounded-md p-2 text-blue-800 hover:bg-white/5 hover:text-[#1b1b1e] focus:outline-2 focus:-outline-offset-1 focus:outline-indigo-500">
                         <span class="sr-only">Open main menu</span>
-                        <!-- Hamburger Icon -->
                         <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                         </svg>
-                        <!-- Close Icon -->
                         <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -36,13 +33,10 @@ $isLoggedIn = isset($_SESSION['user_id']); ?>
                     </button>
                 </div>
 
-                <!-- Logo -->
                 <div class="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
                     <div class="flex shrink-0 items-center">
                         <img src="src/img/books.png" alt="Bookstore" class="h-10 w-auto" />
                     </div>
-
-                    <!-- Desktop Menu -->
                     <div class="hidden sm:ml-6 sm:block">
                         <div class="flex space-x-4">
                             <a href="#" aria-current="page"
@@ -51,8 +45,6 @@ $isLoggedIn = isset($_SESSION['user_id']); ?>
                         </div>
                     </div>
                 </div>
-
-                <!-- Right Icons -->
                 <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
                     <?php
                     $cartCount = isset($_SESSION['cart']) ? count($_SESSION['cart']) : 0;

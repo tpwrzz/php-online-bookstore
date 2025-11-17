@@ -10,7 +10,6 @@ if (isset($_SESSION['user_id'])) {
 $errors = [];
 $success = "";
 
-// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $email = trim($_POST['email'] ?? '');

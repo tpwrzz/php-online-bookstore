@@ -7,7 +7,6 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Check if user is admin
 $user_id = $_SESSION['user_id'];
 $stmt = $conn->prepare("SELECT role FROM users WHERE user_id = ?");
 $stmt->bind_param("i", $user_id);
@@ -19,17 +18,14 @@ if ($role !== 'ADMIN') {
 }
 
 // ---------------- GENRES ----------------
-// genres Pagination
 $genresPerPage = 12;
 $currentgenresPage = isset($_GET['genres_page']) && is_numeric($_GET['genres_page']) ? (int) $_GET['genres_page'] : 1;
 $genresOffset = ($currentgenresPage - 1) * $genresPerPage;
 
-// Total genres count
 $totalgenres = $conn->query("SELECT COUNT(*) as total FROM genres")->fetch_assoc()['total'];
 $totalgenresPages = max(ceil($totalgenres / $genresPerPage), 1);
 $genres = $conn->query("SELECT * FROM genres ORDER BY genre_id ASC");
 
-// Update genre
 if (isset($_POST['update_genre'])) {
     $stmt = $conn->prepare("UPDATE genres SET name=? WHERE genre_id=?");
     $stmt->bind_param("si", $_POST['name'], $_POST['genre_id']);
@@ -38,7 +34,6 @@ if (isset($_POST['update_genre'])) {
     exit;
 }
 
-// Delete genre (only if no books)
 if (isset($_POST['delete_genre'])) {
     $genre_id = $_POST['genre_id'];
     $check = $conn->prepare("SELECT COUNT(*) as cnt FROM books WHERE genre_id=?");
@@ -54,7 +49,6 @@ if (isset($_POST['delete_genre'])) {
     exit;
 }
 
-// Create genre
 if (isset($_POST['create_genre'])) {
     $stmt = $conn->prepare("INSERT INTO genres (name) VALUES (?)");
     $stmt->bind_param("s", $_POST['name']);

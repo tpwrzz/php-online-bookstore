@@ -7,7 +7,6 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Check if user is admin
 $user_id = $_SESSION['user_id'];
 $stmt = $conn->prepare("SELECT role FROM users WHERE user_id = ?");
 $stmt->bind_param("i", $user_id);
@@ -19,35 +18,28 @@ if ($role !== 'ADMIN') {
 }
 
 // ---------------- ORDERS ----------------
-// Orders Pagination
 $ordersPerPage = 12;
 $currentOrdersPage = isset($_GET['orders_page']) && is_numeric($_GET['orders_page']) ? (int) $_GET['orders_page'] : 1;
 $ordersOffset = ($currentOrdersPage - 1) * $ordersPerPage;
 
-// Total orders count
 $totalOrders = $conn->query("SELECT COUNT(*) as total FROM orders")->fetch_assoc()['total'];
 $totalOrdersPages = max(ceil($totalOrders / $ordersPerPage), 1);
 
-// Fetch orders for current page
 $orders = $conn->query("SELECT o.order_id, o.total_price, o.status, o.created_at, u.username 
                         FROM orders o
                         JOIN users u ON o.user_id = u.user_id
                         ORDER BY o.created_at DESC
                         LIMIT $ordersOffset, $ordersPerPage");
 
-// Update order status
 if (isset($_POST['update_status'])) {
     $new_status = $_POST['status'];
     $old_status = $order['status'];
 
-    // Start transaction
     $conn->begin_transaction();
 
     try {
-        // If order becomes CANCELLED → restore stock
         if ($old_status !== 'cancelled' && $new_status === 'cancelled') {
 
-            // Get all items again inside transaction
             $stmt = $conn->prepare("
                 SELECT book_id, quantity
                 FROM order_items
@@ -57,7 +49,6 @@ if (isset($_POST['update_status'])) {
             $stmt->execute();
             $itemsToRestore = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-            // Restore stock for each item
             $stmtRestore = $conn->prepare("
                 UPDATE books 
                 SET stock_qty = stock_qty + ? 
@@ -70,7 +61,6 @@ if (isset($_POST['update_status'])) {
             }
         }
 
-        // Update the order status
         $stmt = $conn->prepare("UPDATE orders SET status=? WHERE order_id=?");
         $stmt->bind_param("si", $new_status, $order_id);
         $stmt->execute();
@@ -86,22 +76,18 @@ if (isset($_POST['update_status'])) {
     }
 }
 
-// Delete order
 if (isset($_POST['delete_order'])) {
     $order_id = $_POST['order_id'];
 
-    // 1. Get all order items so we can restore stock
     $stmt = $conn->prepare("SELECT book_id, quantity FROM order_items WHERE order_id=?");
     $stmt->bind_param("i", $order_id);
     $stmt->execute();
     $items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-    // 3. Delete order items
     $stmt = $conn->prepare("DELETE FROM order_items WHERE order_id=?");
     $stmt->bind_param("i", $order_id);
     $stmt->execute();
 
-    // 4. Delete the order itself
     $stmt = $conn->prepare("DELETE FROM orders WHERE order_id=?");
     $stmt->bind_param("i", $order_id);
     $stmt->execute();

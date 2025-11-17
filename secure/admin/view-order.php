@@ -24,7 +24,6 @@ if (!$order_id || !is_numeric($order_id)) {
     die("Invalid order ID");
 }
 
-// Fetch order + user
 $stmt = $conn->prepare("
     SELECT o.*, u.username, u.email
     FROM orders o
@@ -39,7 +38,6 @@ if (!$order) {
     die("Order not found");
 }
 
-// Fetch items with books, authors, genres
 $stmt = $conn->prepare("
     SELECT 
         oi.order_item_id, oi.quantity, oi.price_each,
@@ -61,14 +59,11 @@ if (isset($_POST['update_status'])) {
     $new_status = $_POST['status'];
     $old_status = $order['status'];
 
-    // Start transaction
     $conn->begin_transaction();
 
     try {
-        // If order becomes CANCELLED → restore stock
         if ($old_status !== 'cancelled' && $new_status === 'cancelled') {
 
-            // Get all items again inside transaction
             $stmt = $conn->prepare("
                 SELECT book_id, quantity
                 FROM order_items
@@ -78,7 +73,6 @@ if (isset($_POST['update_status'])) {
             $stmt->execute();
             $itemsToRestore = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-            // Restore stock for each item
             $stmtRestore = $conn->prepare("
                 UPDATE books 
                 SET stock_qty = stock_qty + ? 
@@ -91,7 +85,6 @@ if (isset($_POST['update_status'])) {
             }
         }
 
-        // Update the order status
         $stmt = $conn->prepare("UPDATE orders SET status=? WHERE order_id=?");
         $stmt->bind_param("si", $new_status, $order_id);
         $stmt->execute();

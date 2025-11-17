@@ -14,6 +14,5 @@ if (isset($_SESSION['cart'][$bookId])) {
     $_SESSION['cart'][$bookId] = $quantity;
 }
 
-// Перенаправление обратно на страницу книги или на страницу каталога
 header('Location: ' . $_SERVER['HTTP_REFERER']);
 exit;

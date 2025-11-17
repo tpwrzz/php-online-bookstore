@@ -3,7 +3,6 @@ session_start();
 $isLoggedIn = isset($_SESSION['user_id']);
 include('../src/scripts/db-connect.php');
 
-// Структура корзины: [book_id => quantity]
 $booksInCart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
 
 if (!$isLoggedIn) {
@@ -16,7 +15,6 @@ if (empty($booksInCart)) {
     $result = [];
 
 } else {
-    // Получаем книги из базы
     $bookIds = array_keys($booksInCart);
     $placeholders = implode(',', array_fill(0, count($bookIds), '?'));
     $sql = "SELECT book_id, title, price, cover_img FROM books WHERE book_id IN ($placeholders)";
@@ -25,9 +23,6 @@ if (empty($booksInCart)) {
     $stmt->bind_param($types, ...$bookIds);
     $stmt->execute();
     $result = $stmt->get_result();
-
-    // Собираем все книги в массив для удобного вывода
-
     while ($row = $result->fetch_assoc()) {
         $qty = $booksInCart[$row['book_id']];
         $subtotal = $row['price'] * $qty;

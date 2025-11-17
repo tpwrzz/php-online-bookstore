@@ -2,9 +2,6 @@
 session_start();
 require_once('../../src/scripts/db-connect.php');
 
-// ---------------------------------
-// 1) CHECK LOGIN
-// ---------------------------------
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../../public/auth.php");
     exit;
@@ -12,9 +9,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $loggedInUserId = (int) $_SESSION['user_id'];
 
-// ---------------------------------
-// 2) VALIDATE ORDER ID FROM GET
-// ---------------------------------
+
 if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
     http_response_code(400);
     die("Invalid order ID");
@@ -22,9 +17,7 @@ if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
 
 $orderId = (int) $_GET['id'];
 
-// ---------------------------------
-// 3) FETCH ORDER — user ownership required
-// ---------------------------------
+
 $sqlOrder = "
     SELECT 
         o.order_id,
@@ -52,9 +45,6 @@ if (!$order) {
     die("Order not found.");
 }
 
-// ---------------------------------
-// 4) FETCH ORDER ITEMS
-// ---------------------------------
 $sqlItems = "
     SELECT 
         oi.order_item_id,
@@ -85,9 +75,7 @@ $stmt->execute();
 $items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-// ---------------------------------
-// 5) STATUS BADGE
-// ---------------------------------
+
 function statusBadge(string $status): string
 {
     return match ($status) {

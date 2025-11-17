@@ -7,7 +7,6 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Check if user is admin
 $user_id = $_SESSION['user_id'];
 $stmt = $conn->prepare("SELECT role FROM users WHERE user_id = ?");
 $stmt->bind_param("i", $user_id);
@@ -19,12 +18,10 @@ if ($role !== 'ADMIN') {
 }
 
 // ---------------- AUTHORS ----------------
-// Pagination
 $authorsPerPage = 12;
 $currentAuthorsPage = isset($_GET['authors_page']) && is_numeric($_GET['authors_page']) ? (int) $_GET['authors_page'] : 1;
 $authorsOffset = ($currentAuthorsPage - 1) * $authorsPerPage;
 
-// Total count
 $totalAuthors = $conn->query("SELECT COUNT(*) as total FROM authors")->fetch_assoc()['total'];
 $totalAuthorsPages = max(ceil($totalAuthors / $authorsPerPage), 1);
 
@@ -34,7 +31,6 @@ $stmt->execute();
 $authors = $stmt->get_result();
 
 
-// Create author
 if (isset($_POST['create_author'])) {
     $stmt = $conn->prepare("INSERT INTO authors (first_name, last_name) VALUES (?, ?)");
     $stmt->bind_param("ss", $_POST['first_name'], $_POST['last_name']);
@@ -42,8 +38,6 @@ if (isset($_POST['create_author'])) {
     header("Location: authors.php");
     exit;
 }
-
-// Update author
 if (isset($_POST['update_author'])) {
     $stmt = $conn->prepare("UPDATE authors SET first_name=?, last_name=? WHERE author_id=?");
     $stmt->bind_param("ssi", $_POST['first_name'], $_POST['last_name'], $_POST['author_id']);
@@ -52,7 +46,6 @@ if (isset($_POST['update_author'])) {
     exit;
 }
 
-// Delete author (only if no books)
 if (isset($_POST['delete_author'])) {
     $author_id = $_POST['author_id'];
     $check = $conn->prepare("SELECT COUNT(*) as cnt FROM books WHERE author_id=?");
