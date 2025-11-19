@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 11, 2025 at 08:43 PM
+-- Generation Time: Nov 18, 2025 at 03:53 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -43,7 +43,7 @@ INSERT INTO `authors` (`author_id`, `first_name`, `last_name`, `bio`) VALUES
 (2, 'Jane', 'Austen', NULL),
 (3, 'J.K.', 'Rowling', NULL),
 (4, 'F. Scott', 'Fitzgerald', NULL),
-(5, 'Agatha', 'Christie', NULL),
+(5, 'Agatha', 'Christie1', NULL),
 (6, 'J.R.R.', 'Tolkien', NULL),
 (7, 'Harper', 'Lee', NULL),
 (8, 'Dan', 'Brown', NULL),
@@ -53,7 +53,8 @@ INSERT INTO `authors` (`author_id`, `first_name`, `last_name`, `bio`) VALUES
 (12, 'Stephen', 'King', NULL),
 (13, 'Mary', 'Shelley', NULL),
 (14, 'Ernest', 'Hemingway', NULL),
-(15, 'Gabriel', 'García Márquez', NULL);
+(15, 'Gabriel', 'García Márquez', NULL),
+(17, 'Lindsay', 'Nikole ', NULL);
 
 -- --------------------------------------------------------
 
@@ -78,21 +79,22 @@ CREATE TABLE `books` (
 --
 
 INSERT INTO `books` (`book_id`, `title`, `author_id`, `genre_id`, `price`, `stock_qty`, `published_at`, `description`, `cover_img`) VALUES
-(1, '1984', 1, 1, 8.99, 30, '1949-06-08', 'A dystopian social science fiction novel and cautionary tale about totalitarianism.', '1984.jpg'),
+(1, '1984', 1, 1, 7.99, 29, '1949-06-08', 'A dystopian social science fiction novel and cautionary tale about totalitarianism.', '1984.jpg'),
 (2, 'Pride and Prejudice', 2, 5, 7.49, 25, '1813-01-28', 'A romantic novel of manners that explores love, reputation, and class.', 'pride_prejudice.jpg'),
 (3, 'Harry Potter and the Philosopher\'s Stone', 3, 3, 9.99, 50, '1997-06-26', 'The first book in the legendary Harry Potter series.', 'hp1.jpg'),
-(4, 'The Great Gatsby', 4, 1, 6.99, 20, '1925-04-10', 'A story about the American dream, love, and tragedy in the Jazz Age.', 'gatsby.jpg'),
+(4, 'The Great Gatsby', 4, 1, 6.99, 19, '1925-04-10', 'A story about the American dream, love, and tragedy in the Jazz Age.', 'gatsby.jpg'),
 (5, 'Murder on the Orient Express', 5, 4, 8.49, 35, '1934-01-01', 'Detective Hercule Poirot investigates a murder aboard a luxury train.', 'orient_express.jpg'),
 (6, 'The Lord of the Rings: The Fellowship of the Ring', 6, 3, 10.99, 40, '1954-07-29', 'Epic fantasy adventure through Middle-earth.', 'lotr1.jpg'),
-(7, 'To Kill a Mockingbird', 7, 1, 7.99, 30, '1960-07-11', 'A profound novel on racial injustice and childhood innocence.', 'mockingbird.jpg'),
+(7, 'To Kill a Mockingbird', 7, 1, 7.99, 32, '1960-07-11', 'A profound novel on racial injustice and childhood innocence.', 'mockingbird.jpg'),
 (8, 'The Da Vinci Code', 8, 4, 9.49, 45, '2003-03-18', 'A mystery thriller that blends art, history, and conspiracy.', 'davinci.jpg'),
 (9, 'The Hunger Games', 9, 2, 8.99, 50, '2008-09-14', 'A dystopian novel about survival and rebellion in a totalitarian state.', 'hungergames.jpg'),
 (10, 'Sapiens: A Brief History of Humankind', 10, 6, 11.99, 25, '2011-01-01', 'An exploration of human evolution and history.', 'sapiens.jpg'),
-(11, 'War and Peace', 11, 7, 12.99, 20, '1869-01-01', 'A sweeping story of Russian society during the Napoleonic Wars.', 'war_peace.jpg'),
+(11, 'War and Peace', 11, 2, 13.99, 20, '1869-01-01', 'A sweeping story of Russian society during the Napoleonic Wars.', 'war_peace.jpg'),
 (12, 'The Shining', 12, 4, 9.49, 30, '1977-01-28', 'A psychological horror novel set in an isolated hotel.', 'shining.jpg'),
-(13, 'Frankenstein', 13, 2, 6.99, 15, '1818-01-01', 'A gothic tale about the dangers of ambition and scientific hubris.', 'frankenstein.jpg'),
-(14, 'The Old Man and the Sea', 14, 1, 7.49, 20, '1952-09-01', 'A short novel about endurance, struggle, and human spirit.', 'oldmansea.jpg'),
-(15, 'One Hundred Years of Solitude', 15, 7, 10.49, 25, '1967-06-05', 'A multi-generational tale of the Buendía family in the fictional town of Macondo.', 'solitude.jpg');
+(13, 'Frankenstein', 13, 2, 6.99, 14, '1818-01-01', 'A gothic tale about the dangers of ambition and scientific hubris.', 'frankenstein.jpg'),
+(14, 'The Old Man and the Sea', 14, 3, 7.49, 19, '1952-09-01', 'A short novel about endurance, struggle, and human spirit.', 'oldmansea.jpg'),
+(15, 'One Hundred Years of Solitude', 15, 1, 10.49, 26, '1967-06-05', 'A multi-generational tale of the Buendía family in the fictional town of Macondo.', 'solitude.jpg'),
+(16, 'Epic Earth', 17, 6, 12.00, 1, '2025-11-19', 'book book book', 'epicearth.jpg');
 
 -- --------------------------------------------------------
 
@@ -116,7 +118,9 @@ INSERT INTO `genres` (`genre_id`, `name`) VALUES
 (4, 'Mystery'),
 (6, 'Non-fiction'),
 (5, 'Romance'),
-(2, 'Science Fiction');
+(2, 'Science Fiction'),
+(8, 'test'),
+(9, 'test2');
 
 -- --------------------------------------------------------
 
@@ -139,7 +143,8 @@ CREATE TABLE `orders` (
 --
 
 INSERT INTO `orders` (`order_id`, `user_id`, `full_name`, `address`, `total_price`, `status`, `created_at`) VALUES
-(1, 2, 'Sarah Johnson', '123 Maple Street, Berlin, Germany', 15.98, '', '2025-11-11 21:01:35');
+(19, 5, 'Tatiana Poverjuc', 'bd. Moscova, 21', 23.97, 'pending', '2025-11-17 19:02:14'),
+(20, 5, 'Tatiana Poverjuc', 'bd. Moscova, 21', 21.47, 'pending', '2025-11-17 21:48:14');
 
 -- --------------------------------------------------------
 
@@ -160,8 +165,10 @@ CREATE TABLE `order_items` (
 --
 
 INSERT INTO `order_items` (`order_item_id`, `order_id`, `book_id`, `quantity`, `price_each`) VALUES
-(1, 1, 1, 1, 8.99),
-(2, 1, 4, 1, 6.99);
+(6, 19, 1, 3, 7.99),
+(7, 20, 14, 1, 7.49),
+(8, 20, 13, 1, 7.49),
+(9, 20, 4, 1, 7.49);
 
 -- --------------------------------------------------------
 
@@ -183,10 +190,9 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`user_id`, `username`, `password_hash`, `role`, `email`, `created_at`) VALUES
-(1, 'admin', 'a44ca5d29f6dab4320ab986479fa985b2d584b11a7da934f7e80bb1449913a07', 'ADMIN', 'admin@bookstore.com', '2025-11-11 21:00:17'),
-(2, 'sarah_j', 'f64b06025e7b2de232c87d890524f198f048f1505b2fe2f33e3b7ea7152c1906', 'USER', 'sarah@gmail.com', '2025-11-11 21:00:17'),
-(3, 'mark_p', '23e6fb71c0f60a9b476430922bdccbe08894c20c5a1901e62ffff8f8304a72e9', 'USER', 'mark@yahoo.com', '2025-11-11 21:00:17'),
-(4, 'lisa_k', 'c6b2788b8c0fde8eb92cd8e70bad07812d21ab91af424bf188161fe2f7f1ae90', 'USER', 'lisa@hotmail.com', '2025-11-11 21:00:17');
+(1, 'admin', '$2y$10$K4JT5CJ2ek9La9qtGDpV6uSd94DHovlObck6DgtGmkh9mYOptR2KW', 'ADMIN', 'admin@bookstore.com', '2025-11-11 21:00:17'),
+(5, 'tpwrzz@gmail.com', '$2y$10$FtK0DT1cb2FKxF/vhTQAbuS5iXCoJzYPT9nUP9XIu9S8Qj3Cdbrz2', 'USER', 'tpwrzz@gmail.com', '2025-11-12 22:00:26'),
+(6, 'admintest@test.com', '$2y$10$K4JT5CJ2ek9La9qtGDpV6uSd94DHovlObck6DgtGmkh9mYOptR2KW', 'ADMIN', 'admintest@test.com', '2025-11-13 12:27:46');
 
 --
 -- Indexes for dumped tables
@@ -243,37 +249,37 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `authors`
 --
 ALTER TABLE `authors`
-  MODIFY `author_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `author_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `books`
 --
 ALTER TABLE `books`
-  MODIFY `book_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `book_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `genres`
 --
 ALTER TABLE `genres`
-  MODIFY `genre_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `genre_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `order_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `order_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `order_item_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `order_item_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `user_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- Constraints for dumped tables
